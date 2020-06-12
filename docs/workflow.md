@@ -7,7 +7,7 @@ It is composed of multiple steps, each step following the previous one.
 
 ## Setup
 
-Nestor workflow is defined in [nestor configuration](TODO Link to doc), using a list, for example:
+Nestor workflow's steps are defined in [nestor configuration](TODO Link to doc), using a list, for example:
 
 ```yaml
 workflow:
