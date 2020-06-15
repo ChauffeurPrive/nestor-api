@@ -1,4 +1,4 @@
-.PHONY: format lint coverage isort-format black-format
+.PHONY: black-format isort-format format lint mypy pytest test-all vulncheck
 
 export BOLD=`tput bold`
 export ENDBOLD=`tput sgr0`
