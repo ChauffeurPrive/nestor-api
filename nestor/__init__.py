@@ -1,4 +1,4 @@
-"""credit_approval main module."""
+"""nestor-api main module."""
 
 __author__ = "Kapten"
 __email__ = "tech-admin@kapten.com"
