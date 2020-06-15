@@ -9,7 +9,7 @@ setup(
     version=nestor.__version__,
     url="https://github.com/ChauffeurPrive/nestor-api",
     python_requires=">=3.6",
-    author_email="tech@kapten.com",
+    author_email="tech-admin@kapten.com",
     description="API to manages kubernetes deployments",
     packages=find_packages(),
     install_requires=[],

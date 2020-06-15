@@ -4,6 +4,8 @@ Nestor-api is an API used to manage deployment of applications Kubernetes. I can
 
 ## Installing
 
+Python 3.6 or above.
+
 Dependencies are managed by [Pipenv](https://github.com/pypa/pipenv).
 
 ```bash
