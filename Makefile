@@ -15,7 +15,7 @@ help:
 
 black-format:
 	@echo "$(BOLD)Formatting using black$(ENDBOLD)"
-	black --line-length 80 nestor ./**.py
+	black --line-length 100 nestor ./**.py
 
 isort-format:
 	@echo "$(BOLD)Formatting using isort$(ENDBOLD)"
