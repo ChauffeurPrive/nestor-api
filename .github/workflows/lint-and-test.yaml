@@ -1,0 +1,36 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Lint and test coverage
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pipenv sync --dev
+        pipenv run pip list
+    - name: Lint
+      run: pipenv run make lint
+    - name: Type checking
+      run: pipenv run make mypy
+    - name: Tests
+      run: pipenv run make pytest
+    - name: Coverage check
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./cov-reports/coverage.xml
+        flags: unittests
+        name: codecov-upload
+        fail_ci_if_error: true
