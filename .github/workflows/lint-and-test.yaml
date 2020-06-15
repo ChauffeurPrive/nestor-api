@@ -3,7 +3,7 @@
 
 name: Lint and test coverage
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   test:
@@ -30,7 +30,6 @@ jobs:
     - name: Coverage check
       uses: codecov/codecov-action@v1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
         file: ./cov-reports/coverage.xml
         flags: unittests
         name: codecov-upload
