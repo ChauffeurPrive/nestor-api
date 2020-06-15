@@ -1,4 +1,4 @@
-# nestor-api
+# nestor-api · [![codecov](https://codecov.io/gh/ChauffeurPrive/nestor-api/branch/master/graph/badge.svg)](https://codecov.io/gh/ChauffeurPrive/nestor-api)
 
 Nestor-api is an API used to manage deployment of applications Kubernetes. I can be used with [nestor-cli](https://github.com/ChauffeurPrive/nestor-cli), a CLI tool consuming nestor-api.
 
