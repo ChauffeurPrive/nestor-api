@@ -1,4 +1,4 @@
-"""Test nestor_api.api.api_routes.sample"""
+"""Test nestor_api.api.api_routes.sample."""
 from flask.testing import FlaskClient
 import pytest
 

@@ -6,6 +6,6 @@ def register_routes(api: Blueprint) -> None:
     """Register the /sample route."""
 
     @api.route("/sample", methods=["GET"])
-    def sample() -> Response:  # pylint: disable=unused-variable
+    def _sample() -> Response:
         """Return a hello world."""
         return jsonify({"sample": "Hello, world!"})

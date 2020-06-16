@@ -1,7 +1,7 @@
 """Register all routes under the /api prefixes. The route /heartbeat is not included."""
 from flask import Blueprint
 
-from nestor_api.api.api_routes import sample
+from .api_routes import sample
 
 
 def create_api() -> Blueprint:
