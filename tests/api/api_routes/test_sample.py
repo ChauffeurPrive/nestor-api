@@ -1,7 +1,4 @@
 """Test nestor_api.api.api_routes.sample."""
-from flask.testing import FlaskClient
-import pytest
-
 from nestor_api.api.flask_app import create_app
 
 

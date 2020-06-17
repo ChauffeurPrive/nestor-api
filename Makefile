@@ -24,7 +24,7 @@ isort-format:
 format: isort-format black-format
 
 lint:
-	pylint nestor_api ./**.py
+	pylint nestor_api tests ./**.py
 
 mypy:
 	mypy nestor_api tests
