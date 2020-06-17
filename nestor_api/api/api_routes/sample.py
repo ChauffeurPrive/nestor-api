@@ -3,7 +3,7 @@ from flask import Blueprint, Response, jsonify
 
 
 def register_routes(api: Blueprint) -> None:
-    """Register the /sample route."""
+    """Register the /sample routes."""
 
     @api.route("/sample", methods=["GET"])
     def _sample() -> Response:
