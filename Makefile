@@ -15,19 +15,19 @@ help:
 
 black-format:
 	@echo "$(BOLD)Formatting using black$(ENDBOLD)"
-	black --line-length 100 nestor ./**.py
+	black --line-length 100 nestor_api ./**.py
 
 isort-format:
 	@echo "$(BOLD)Formatting using isort$(ENDBOLD)"
-	isort -rc nestor ./**.py --apply
+	isort -rc nestor_api ./**.py --apply
 
 format: isort-format black-format
 
 lint:
-	pylint nestor ./**.py
+	pylint nestor_api tests ./**.py
 
 mypy:
-	mypy nestor tests
+	mypy nestor_api tests
 
 pytest:
 	pytest

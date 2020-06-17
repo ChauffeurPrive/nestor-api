@@ -1,4 +1,4 @@
-"""nestor-api main module."""
+"""nestor_api main module."""
 
 __author__ = "Kapten"
 __email__ = "tech-admin@kapten.com"
