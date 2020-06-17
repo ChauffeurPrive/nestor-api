@@ -1,4 +1,4 @@
-"""Return a initialized Flask application with the API."""
+"""Return an initialized Flask application with the API."""
 from flask import Flask
 
 from nestor_api.api.api import create_api
