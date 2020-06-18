@@ -14,6 +14,8 @@ mypy = "==0.770"
 
 [packages]
 flask = "==1.1.2"
+# Flask's "itsdangerous" dependency generates a warning. It should be removed in the next version.
+itsdangerous = "==1.1.0"
 
 [requires]
 python_version = "3.7"
