@@ -11,3 +11,13 @@ Dependencies are managed by [Pipenv](https://github.com/pypa/pipenv).
 ```bash
 pipenv sync # Add --dev to also install dev dependencies
 ```
+
+## Configuration
+
+> [Source](./nestor_api/config/config.py)
+
+|                    Key | Default                | Unit | Comment            |
+| ---------------------: | ---------------------- | ---- | ------------------ |
+|   `NESTOR_CONFIG_PATH` |                        |      | Configuration path |
+| `NESTOR_PRISTINE_PATH` | `/tmp/nestor/pristine` |      | Pristine path      |
+|     `NESTOR_WORK_PATH` | `/tmp/nestor/work`     |      | Work path          |
