@@ -12,6 +12,12 @@ Dependencies are managed by [Pipenv](https://github.com/pypa/pipenv).
 pipenv sync # Add --dev to also install dev dependencies
 ```
 
+## Running the tests 
+
+```bash
+pipenv run make pytest
+```
+
 ## Configuration
 
 > [Source](./nestor_api/config/config.py)
