@@ -5,7 +5,6 @@ import math
 import os
 import shutil
 import subprocess
-
 from datetime import datetime
 from pathlib import Path
 from random import random
@@ -62,7 +61,7 @@ def from_yaml(file_path):
 
 def get_pristine_path(pristine_path_name):
     """Returns the pristine path"""
-    return os.path.join(Configuration.pristine_path, pristine_path_name)
+    return os.path.join(Configuration.get_pristine_path(), pristine_path_name)
 
 
 def get_temporary_copy(directory_path, target_directory_prefix=""):
@@ -88,7 +87,7 @@ def get_temporary_directory_path(prefix=""):
 
 def get_working_path(working_path_name):
     """Returns the working path"""
-    return os.path.join(Configuration.working_path, working_path_name)
+    return os.path.join(Configuration.get_working_path(), working_path_name)
 
 
 def remove(file_path):
