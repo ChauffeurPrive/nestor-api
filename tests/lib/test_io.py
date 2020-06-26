@@ -1,9 +1,10 @@
 # pylint: disable=missing-function-docstring disable=missing-module-docstring
 
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
+
 import pytest
 
 import nestor_api.lib.io as io
@@ -129,8 +130,8 @@ def test_get_pristine_path_default():
     assert pristine_path == "/tmp/nestor/pristine/my_path_name"
 
 
-def test_get_pristine_path_configured(monkeypatch):
-    monkeypatch.setattr(Configuration, "pristine_path", "/tmp/a_configured_path")
+def test_get_pristine_path_configured(mocker):
+    mocker.patch.object(Configuration, "get_pristine_path", return_value="/tmp/a_configured_path")
 
     pristine_path = io.get_pristine_path("my_path_name")
 
@@ -163,8 +164,8 @@ def test_get_working_path_default():
     assert pristine_path == "/tmp/nestor/work/my_path_name"
 
 
-def test_get_working_path_configured(monkeypatch):
-    monkeypatch.setattr(Configuration, "working_path", "/tmp/a_configured_path")
+def test_get_working_path_configured(mocker):
+    mocker.patch.object(Configuration, "get_working_path", return_value="/tmp/a_configured_path")
 
     pristine_path = io.get_working_path("my_path_name")
 
