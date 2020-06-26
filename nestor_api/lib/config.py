@@ -4,6 +4,7 @@ import copy
 import errno
 import os
 import re
+from typing import Optional
 
 from nestor_api.config.config import Configuration
 from nestor_api.errors.config.aggregated_configuration_error import AggregatedConfigurationError
@@ -125,3 +126,25 @@ def _resolve_variables_deep(config: dict) -> dict:
         raise AggregatedConfigurationError(errors)
 
     return resolved_config
+
+
+def get_previous_step(config_object: dict, target: str) -> Optional[str]:
+    """ Returns the previous step in the defined workflow """
+    index = config_object["workflow"].index(target)
+    if index > 0:
+        return config_object["workflow"][index - 1]
+    return None
+
+
+# pylint: disable=bad-continuation
+def list_apps_config(
+    config_path=Configuration.get_config_path(), apps_path=Configuration.get_config_app_folder()
+) -> dict:
+    """Retrieves all of the application names."""
+    apps_path = os.path.join(config_path, apps_path)
+
+    if not os.path.isdir(apps_path):
+        raise ValueError(apps_path)
+    apps_files = [f for f in os.listdir(apps_path) if os.path.isfile(os.path.join(apps_path, f))]
+    apps_config = [io.from_yaml(file) for file in apps_files]
+    return {app_config["name"]: app_config for app_config in apps_config}
