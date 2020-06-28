@@ -7,6 +7,10 @@ import nestor_api.lib.io as io
 from nestor_api.utils.logger import Logger
 
 
+def clone(repository: str, remote_repository_url: str, branch_name: str = 'master'):
+    return io.execute(f'git clone {remote_repository_url} -b {branch_name}', repository)
+
+
 def branch(repository_dir, branch_name):
     """Checkout a branch of a repository"""
     Logger.debug({"path": repository_dir}, "[git#branch] Repository path")
@@ -40,6 +44,10 @@ def get_last_tag(repository_dir):
 def get_remote_url(repository_dir, remote_name="origin"):
     """Retrieves the remote url of a repository"""
     return io.execute(f"git remote get-url {remote_name}", repository_dir)
+
+
+def get_branch_hash(remote_repository_url: str, branch_name: str):
+    return io.execute(f'git ls-remote {remote_repository_url} {branch_name}')
 
 
 def get_last_commit_hash(repository_dir):
