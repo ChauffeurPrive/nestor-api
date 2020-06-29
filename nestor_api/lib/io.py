@@ -64,7 +64,7 @@ def get_pristine_path(pristine_path_name):
     return os.path.join(Configuration.get_pristine_path(), pristine_path_name)
 
 
-def get_temporary_copy(directory_path, target_directory_prefix=""):
+def create_temporary_copy(directory_path, target_directory_prefix=""):
     """Creates a copy of a directory in a temporary directory and returns its path"""
     copy_path = get_temporary_directory_path(target_directory_prefix)
     copy(directory_path, copy_path)
