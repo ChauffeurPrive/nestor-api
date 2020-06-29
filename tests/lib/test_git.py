@@ -15,19 +15,14 @@ import nestor_api.lib.io as io
 class TestGitLibrary:
     def test_branch_existing(self, mocker):
         mocker.patch.object(
-            io,
-            "execute",
-            side_effect=["* feature/branch remotes/origin/feature/branch", ""],
+            io, "execute", side_effect=["* feature/branch remotes/origin/feature/branch", ""],
         )
 
         git.branch("/path_to/a_git_repository", "feature/branch")
 
         io.execute.assert_has_calls(
             [
-                call(
-                    "git branch --list feature/branch",
-                    "/path_to/a_git_repository",
-                ),
+                call("git branch --list feature/branch", "/path_to/a_git_repository",),
                 call("git checkout feature/branch", "/path_to/a_git_repository"),
             ]
         )
@@ -39,10 +34,7 @@ class TestGitLibrary:
 
         io.execute.assert_has_calls(
             [
-                call(
-                    "git branch --list feature/branch",
-                    "/path_to/a_git_repository",
-                ),
+                call("git branch --list feature/branch", "/path_to/a_git_repository",),
                 call("git checkout -b feature/branch", "/path_to/a_git_repository"),
             ]
         )
@@ -50,21 +42,17 @@ class TestGitLibrary:
     def test_create_working_repository(self, mocker):
         mocker.patch.object(config, "get_app_config", return_value={})
         mocker.patch.object(
-            git,
-            "update_pristine_repository",
-            return_value="/fixtures-nestor-pristine/my-app",
+            git, "update_pristine_repository", return_value="/fixtures-nestor-pristine/my-app",
         )
         mocker.patch.object(
-            io,
-            "get_temporary_copy",
-            return_value="/fixtures-nestor-work/my-app-11111111111111",
+            io, "create_temporary_copy", return_value="/fixtures-nestor-work/my-app-11111111111111",
         )
 
         repository_dir = git.create_working_repository("my-app")
 
         git.update_pristine_repository.assert_called_once_with("my-app")
 
-        io.get_temporary_copy.assert_called_once_with(
+        io.create_temporary_copy.assert_called_once_with(
             "/fixtures-nestor-pristine/my-app", "my-app"
         )
 
@@ -106,15 +94,12 @@ class TestGitLibrary:
     def test_get_remote_url_with_remote_name(self, mocker):
         mocker.patch.object(io, "execute", return_value="git@github.com:org/repo.git")
 
-        remote_url = git.get_remote_url(
-            "/path_to/a_git_repository", "custom_remote_name"
-        )
+        remote_url = git.get_remote_url("/path_to/a_git_repository", "custom_remote_name")
 
         assert remote_url == "git@github.com:org/repo.git"
 
         io.execute.assert_called_once_with(
-            "git remote get-url custom_remote_name",
-            "/path_to/a_git_repository",
+            "git remote get-url custom_remote_name", "/path_to/a_git_repository",
         )
 
     def test_push(self, mocker):
@@ -123,8 +108,7 @@ class TestGitLibrary:
         git.push("/path_to/a_git_repository", "feature/branch")
 
         io.execute.assert_called_once_with(
-            "git push origin feature/branch --tags --follow-tags",
-            "/path_to/a_git_repository",
+            "git push origin feature/branch --tags --follow-tags", "/path_to/a_git_repository",
         )
 
     def test_tag(self, mocker):
@@ -178,9 +162,7 @@ class TestGitLibrary:
         mocker.patch.object(io, "exists", return_value=False)
         mocker.patch.object(io, "execute", side_effect=["", ""])
 
-        git.update_repository(
-            "/path_to/a_git_repository", "git@github.com:org/repo.git"
-        )
+        git.update_repository("/path_to/a_git_repository", "git@github.com:org/repo.git")
 
         io.exists.assert_called_once_with("/path_to/a_git_repository")
         io.execute.assert_has_calls(
@@ -208,9 +190,7 @@ class TestGitLibrary:
 
     def test_update_repository_remote_mismatch(self, mocker):
         mocker.patch.object(io, "exists", return_value=True)
-        mocker.patch.object(
-            io, "execute", side_effect=["git@github.com:org/repo.git", "", ""]
-        )
+        mocker.patch.object(io, "execute", side_effect=["git@github.com:org/repo.git", "", ""])
         mocker.patch.object(io, "remove")
 
         git.update_repository(
@@ -222,22 +202,16 @@ class TestGitLibrary:
         io.execute.assert_has_calls(
             [
                 call("git remote get-url origin", "/path_to/a_git_repository"),
-                call(
-                    "git clone git@github.com:org/another_repo_url.git /path_to/a_git_repository"
-                ),
+                call("git clone git@github.com:org/another_repo_url.git /path_to/a_git_repository"),
                 call("git reset --hard origin/master", "/path_to/a_git_repository"),
             ]
         )
 
     def test_update_repository_remote_match_update(self, mocker):
         mocker.patch.object(io, "exists", return_value=True)
-        mocker.patch.object(
-            io, "execute", side_effect=["git@github.com:org/repo.git", "", "", ""]
-        )
+        mocker.patch.object(io, "execute", side_effect=["git@github.com:org/repo.git", "", "", ""])
 
-        git.update_repository(
-            "/path_to/a_git_repository", "git@github.com:org/repo.git"
-        )
+        git.update_repository("/path_to/a_git_repository", "git@github.com:org/repo.git")
 
         io.exists.assert_called_once_with("/path_to/a_git_repository")
         io.execute.assert_has_calls(
@@ -255,16 +229,10 @@ class TestGitLibrary:
         mocker.patch.object(
             io,
             "execute",
-            side_effect=[
-                subprocess.CalledProcessError(1, "git remote get-url origin"),
-                "",
-                "",
-            ],
+            side_effect=[subprocess.CalledProcessError(1, "git remote get-url origin"), "", "",],
         )
 
-        git.update_repository(
-            "/path_to/a_git_repository", "git@github.com:org/repo.git"
-        )
+        git.update_repository("/path_to/a_git_repository", "git@github.com:org/repo.git")
 
         io.exists.assert_called_once_with("/path_to/a_git_repository")
         io.remove.assert_called_once_with("/path_to/a_git_repository")

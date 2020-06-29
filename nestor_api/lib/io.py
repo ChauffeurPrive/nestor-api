@@ -1,13 +1,13 @@
 """I/O library"""
 
+from datetime import datetime
 import errno
 import math
 import os
-import shutil
-import subprocess
-from datetime import datetime
 from pathlib import Path
 from random import random
+import shutil
+import subprocess
 
 import yaml
 
@@ -43,7 +43,7 @@ def ensure_dir(directory_path):
 def execute(command: str, cwd=None):
     """Executes a command and returns the stdout from it"""
     result = subprocess.run(command.split(), stdout=subprocess.PIPE, check=True, cwd=cwd)
-    return result.stdout.decode('utf-8')
+    return result.stdout.decode("utf-8")
 
 
 def exists(file_path):
@@ -53,7 +53,7 @@ def exists(file_path):
 
 def from_yaml(file_path):
     """Returns a dictionary from yaml file path"""
-    with open(file_path, 'r') as file_data:
+    with open(file_path, "r") as file_data:
         yaml_data = file_data.read()
 
     return yaml.safe_load(yaml_data)

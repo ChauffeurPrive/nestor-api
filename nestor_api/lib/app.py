@@ -1,5 +1,6 @@
 """Application library"""
 
+
 def get_version():
     """Get the application version"""
 
