@@ -16,8 +16,10 @@ pipenv sync # Add --dev to also install dev dependencies
 
 > [Source](./nestor_api/config/config.py)
 
-|                    Key | Default                | Unit | Comment            |
-| ---------------------: | ---------------------- | ---- | ------------------ |
-|   `NESTOR_CONFIG_PATH` |                        |      | Configuration path |
-| `NESTOR_PRISTINE_PATH` | `/tmp/nestor/pristine` |      | Pristine path      |
-|     `NESTOR_WORK_PATH` | `/tmp/nestor/work`     |      | Work path          |
+|                              Key | Default                | Unit | Comment                       |
+| -------------------------------: | ---------------------- | ---- | ----------------------------- |
+|             `NESTOR_CONFIG_PATH` |                        |      | Configuration path            |
+|      `NESTOR_CONFIG_APPS_FOLDER` | `apps`                 |      | The application config folder |
+| `NESTOR_CONFIG_PROJECT_FILENAME` | `project.yaml`         |      | The project config file       |
+|           `NESTOR_PRISTINE_PATH` | `/tmp/nestor/pristine` |      | Pristine path                 |
+|               `NESTOR_WORK_PATH` | `/tmp/nestor/work`     |      | Work path                     |

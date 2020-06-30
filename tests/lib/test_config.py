@@ -5,8 +5,8 @@ from unittest.mock import call
 import pytest
 
 from nestor_api.config.config import Configuration
+from nestor_api.errors.app_configuration_not_found_error import AppConfigurationNotFoundError
 import nestor_api.lib.config as config
-from nestor_api.lib.errors import AppConfigurationNotFoundError
 import nestor_api.lib.io as io
 
 
@@ -27,21 +27,22 @@ def test_change_environment(mocker):
 
 @pytest.mark.usefixtures("config")
 def test_create_temporary_directory(mocker):
-    spy = mocker.patch.object(io, "create_temporary_copy")
+    spy = mocker.patch.object(io, "create_temporary_copy", return_value="/temporary/path")
 
-    config.create_temporary_config_copy()
+    path = config.create_temporary_config_copy()
 
     spy.assert_called_once_with("/fixtures-nestor-config", "config")
+    assert path == "/temporary/path"
 
 
 def test_get_app_config(mocker):
     mocker.patch.object(Configuration, "get_config_path", return_value="tests/__fixtures__/config")
 
-    app_config = config.get_app_config("app")
+    app_config = config.get_app_config("backoffice")
 
     assert app_config == {
         "domain": "website.com",
-        "sub_domain": "app",
+        "sub_domain": "backoffice",
         "variables": {
             "ope": {
                 "VARIABLE_OPE_1": "ope_1",
@@ -62,13 +63,13 @@ def test_get_app_config_when_not_found(mocker):
     mocker.patch.object(io, "exists", return_value=False)
 
     with pytest.raises(AppConfigurationNotFoundError):
-        config.get_app_config("app")
+        config.get_app_config("app_not_here")
 
 
-def test_get_environment_config(mocker):
+def test_get_project_config(mocker):
     mocker.patch.object(Configuration, "get_config_path", return_value="tests/__fixtures__/config")
 
-    environment_config = config.get_environment_config()
+    environment_config = config.get_project_config()
 
     assert environment_config == {
         "domain": "website.com",
@@ -80,8 +81,8 @@ def test_get_environment_config(mocker):
 
 
 @pytest.mark.usefixtures("config")
-def test_get_environment_config_when_not_found(mocker):
+def test_get_project_config_when_not_found(mocker):
     mocker.patch.object(io, "exists", return_value=False)
 
     with pytest.raises(FileNotFoundError):
-        config.get_environment_config()
+        config.get_project_config()

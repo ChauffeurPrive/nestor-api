@@ -1,4 +1,4 @@
-sub_domain: app
+sub_domain: backoffice
 variables:
   ope:
     VARIABLE_OPE_2: 'ope_2_override'

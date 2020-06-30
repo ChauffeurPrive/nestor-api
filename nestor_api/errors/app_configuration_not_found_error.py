@@ -1,4 +1,4 @@
-"""Custom errors"""
+"""Custom error"""
 
 
 class AppConfigurationNotFoundError(FileNotFoundError):

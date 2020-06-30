@@ -1,11 +1,10 @@
 """Dictionary utilities"""
 
+import copy
+
 
 def deep_merge(destination: dict, source: dict) -> dict:
     """Recursively add all keys from `source` into `destination`.
-
-    Note that this will mutate `destination`. If you want to keep its value intact, do:
-        deep_merge(dict(destination), source)
 
     Example:
         >>> destination = {'a': 1, 'b': {'c': 3}}
@@ -13,15 +12,14 @@ def deep_merge(destination: dict, source: dict) -> dict:
         >>> deep_merge(destination, source)
         {'a': 11, 'b': {'c': 3, 'd': 44}, 'e': 55}
     """
-    for key in source:
-        # pylint: disable=bad-continuation
-        if (
-            key in destination
-            and isinstance(destination[key], dict)
-            and isinstance(source[key], dict)
-        ):
-            deep_merge(destination[key], source[key])
-        else:
-            destination[key] = source[key]
 
-    return destination
+    def _deep_merge_rec(dest, src):
+        for key in src:
+            # pylint: disable=bad-continuation
+            if key in dest and isinstance(dest.get(key), dict) and isinstance(src[key], dict):
+                dest[key] = _deep_merge_rec(dest[key], src[key])
+            else:
+                dest[key] = src[key]
+        return dest
+
+    return _deep_merge_rec(copy.deepcopy(destination), source)

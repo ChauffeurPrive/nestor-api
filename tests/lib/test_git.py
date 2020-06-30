@@ -22,7 +22,7 @@ class TestGitLibrary:
 
         io.execute.assert_has_calls(
             [
-                call("git branch --list feature/branch", "/path_to/a_git_repository",),
+                call("git branch --list feature/branch", "/path_to/a_git_repository"),
                 call("git checkout feature/branch", "/path_to/a_git_repository"),
             ]
         )
@@ -34,7 +34,7 @@ class TestGitLibrary:
 
         io.execute.assert_has_calls(
             [
-                call("git branch --list feature/branch", "/path_to/a_git_repository",),
+                call("git branch --list feature/branch", "/path_to/a_git_repository"),
                 call("git checkout -b feature/branch", "/path_to/a_git_repository"),
             ]
         )
