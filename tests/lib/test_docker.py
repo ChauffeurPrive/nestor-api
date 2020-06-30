@@ -79,17 +79,12 @@ def test_build_failure(mocker):
         " --build-arg COMMIT_HASH=a2b3c4"
         " /path_to/a_git_repository"
     )
-    Logger.error.assert_called_once_with(
-        {"err": exception},
-        "Error while building Docker image"
-    )
+    Logger.error.assert_called_once_with({"err": exception}, "Error while building Docker image")
 
 
 def test_get_registry_image_tag():
     registry_image_tag = docker.get_registry_image_tag(
-        "my-app",
-        "my-tag",
-        {"organization": "my-organization"}
+        "my-app", "my-tag", {"organization": "my-organization"}
     )
 
     assert registry_image_tag == "my-organization/my-app:my-tag"
@@ -115,8 +110,9 @@ def test_has_docker_image_not_existing(mocker):
 
 def test_push_no_image(mocker):
     mocker.patch.object(
-        config, "get_app_config",
-        return_value={"docker": {"registry": {"organization": "my-organization"}}}
+        config,
+        "get_app_config",
+        return_value={"docker": {"registry": {"organization": "my-organization"}}},
     )
     mocker.patch.object(git, "get_last_tag", return_value="1.0.0-sha-a2b3c4")
     mocker.patch.object(io, "execute", return_value="")
@@ -126,13 +122,14 @@ def test_push_no_image(mocker):
 
     config.get_app_config.assert_called_once_with("my-app")
     git.get_last_tag.assert_called_once_with("/path_to/a_git_repository")
-    io.execute.assert_called_once_with('docker images my-app:1.0.0-sha-a2b3c4 --quiet')
+    io.execute.assert_called_once_with("docker images my-app:1.0.0-sha-a2b3c4 --quiet")
 
 
 def test_push(mocker):
     mocker.patch.object(
-        config, "get_app_config",
-        return_value={"docker": {"registry": {"organization": "my-organization"}}}
+        config,
+        "get_app_config",
+        return_value={"docker": {"registry": {"organization": "my-organization"}}},
     )
     mocker.patch.object(git, "get_last_tag", return_value="1.0.0-sha-a2b3c4")
     mocker.patch.object(io, "execute", side_effect=["001122334455", "", ""])
@@ -141,8 +138,10 @@ def test_push(mocker):
 
     config.get_app_config.assert_called_once_with("my-app")
     git.get_last_tag.assert_called_once_with("/path_to/a_git_repository")
-    io.execute.assert_has_calls([
-        call('docker images my-app:1.0.0-sha-a2b3c4 --quiet'),
-        call('docker tag my-app:1.0.0-sha-a2b3c4 my-organization/my-app:1.0.0-sha-a2b3c4'),
-        call('docker push my-organization/my-app:1.0.0-sha-a2b3c4')
-    ])
+    io.execute.assert_has_calls(
+        [
+            call("docker images my-app:1.0.0-sha-a2b3c4 --quiet"),
+            call("docker tag my-app:1.0.0-sha-a2b3c4 my-organization/my-app:1.0.0-sha-a2b3c4"),
+            call("docker push my-organization/my-app:1.0.0-sha-a2b3c4"),
+        ]
+    )
