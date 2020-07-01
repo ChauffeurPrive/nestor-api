@@ -1,8 +1,9 @@
+# pylint: disable=duplicate-code
 """Schemas class to validate the Nestor configurations"""
 
-from application import APPLICATION_SCHEMA
-from project import PROJECT_SCHEMA
-from specs import SPECS
+from validator.schemas.application import APPLICATION_SCHEMA
+from validator.schemas.project import PROJECT_SCHEMA
+from validator.schemas.specs import SPECS
 
 SCHEMAS = {
     "APPLICATIONS": {
@@ -14,5 +15,5 @@ SCHEMAS = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": SPECS,
         **PROJECT_SCHEMA,
-    }
+    },
 }

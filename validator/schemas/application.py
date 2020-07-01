@@ -1,12 +1,10 @@
+# pylint: disable=duplicate-code
 """The application schema configuration managed by Nestor"""
 
 APPLICATION_SCHEMA = {
     "type": "object",
     "properties": {
-        "app": {
-            "type": "string",
-            "maxLength": 58,
-        },
+        "app": {"type": "string", "maxLength": 58,},
         "git": {
             "type": "object",
             "properties": {
@@ -23,16 +21,9 @@ APPLICATION_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {
-                        "type": "string",
-                        "pattern": "^([a-zA-Z0-9]*-?)*$",
-                    },
-                    "is_cronjob": {
-                        "type": "boolean",
-                    },
-                    "start_command": {
-                        "type": "string",
-                    },
+                    "name": {"type": "string", "pattern": "^([a-zA-Z0-9]*-?)*$",},
+                    "is_cronjob": {"type": "boolean",},
+                    "start_command": {"type": "string",},
                 },
                 "required": ["name", "is_cronjob", "start_command"],
             },
@@ -45,39 +36,23 @@ APPLICATION_SCHEMA = {
                     "items": {
                         "type": "object",
                         "properties": {
-                            "db": {
-                                "type": "string",
-                            },
-                            "password": {
-                                "type": "string",
-                            },
-                            "username": {
-                                "type": "string",
-                            },
+                            "db": {"type": "string",},
+                            "password": {"type": "string",},
+                            "username": {"type": "string",},
                         },
                     },
                 },
             },
         },
-        "scales": {
-            "$ref": "#/definitions/scales",
-        },
-        "crons": {
-            "$ref": "#/definitions/crons",
-        },
-        "resources": {
-            "$ref": "#/definitions/resources",
-        },
+        "scales": {"$ref": "#/definitions/scales",},
+        "crons": {"$ref": "#/definitions/crons",},
+        "resources": {"$ref": "#/definitions/resources",},
         "build": {
             "type": "object",
             "properties": {
                 "variables": {
                     "type": "object",
-                    "patternProperties": {
-                        "": {
-                            "type": ["boolean", "integer", "string"],
-                        },
-                    },
+                    "patternProperties": {"": {"type": ["boolean", "integer", "string"],},},
                 },
             },
         },
@@ -106,11 +81,9 @@ APPLICATION_SCHEMA = {
                 },
                 "tplWeb2xxThreshold": {
                     "type": "string",
-                    "pattern":
-                    "^[\b100\b|\b90\b|\b80\b|\b70\b|\b60\b|\b50\b|\b0\b|\bdefault\b]",
+                    "pattern": "^[\b100\b|\b90\b|\b80\b|\b70\b|\b60\b|\b50\b|\b0\b|\bdefault\b]",
                     "example": "50",
-                    "description":
-                    "Define the threshold for 2xx status. If below alert is raised.",
+                    "description": "Define the threshold for 2xx status. If below alert is raised.",
                 },
                 "tplWeb5xxThreshold": {
                     "type": "string",
@@ -122,14 +95,15 @@ APPLICATION_SCHEMA = {
                     "type": "string",
                     "pattern": "^0.0[12458]|^0.12$|^0.30$|^[123]$|^default$",
                     "example": "0.12",
-                    "description":
-                    "Define the threshold for 50th percentile latency in ms. If above alert is raised.",
+                    "description": "Define the threshold for 50th percentile latency in ms."
+                                   + "If above alert is raised.",
                 },
                 "tplWeb95thLatencyThreshold": {
                     "type": "string",
                     "pattern": "^0.0[123457]|^0.[123456]0$|^[124]$|^1.5$|^default$",
                     "example": "1.5",
-                    "description": "Define the threshold for 95th percentile latency in ms. If above alert is raised.",
+                    "description": "Define the threshold for 95th percentile latency in ms."
+                                   + "If above alert is raised.",
                 },
                 "tplSLO": {
                     "type": "string",
@@ -159,14 +133,12 @@ APPLICATION_SCHEMA = {
                 "tplMountDirectory": {
                     "type": "string",
                     "example": "/opt/my-folder",
-                    "description":
-                    "Define the folder in which mount a file through ConfigMap for instance",
+                    "description": "Define the folder to mount a file through ConfigMap or others",
                 },
                 "tplSessionAffinity": {
                     "type": "boolean",
                     "example": "false",
-                    "description":
-                    "Activate or deactivate session affinity on ingress controller",
+                    "description": "Activate or deactivate session affinity on ingress controller",
                 },
                 "tplTerminationGracePeriod": {
                     "type": "integer",
@@ -182,85 +154,41 @@ APPLICATION_SCHEMA = {
             },
             "additionalProperties": False,
         },
-        "dependencies": {
-            "type": "array",
-            "items": {
-                "type": "string",
-            },
-        },
+        "dependencies": {"type": "array", "items": {"type": "string",},},
         "docker": {
             "type": "object",
-            "properties": {
-                "image_name": {
-                    "type": "string",
-                },
-                "dockerfile": {
-                    "type": "string",
-                },
-            },
+            "properties": {"image_name": {"type": "string",}, "dockerfile": {"type": "string",},},
             "additionalProperties": False,
         },
         "teams": {
             "oneOf": [
-                {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                    },
-                },
+                {"type": "array", "items": {"type": "string",},},
                 {
                     "type": "object",
                     "properties": {
-                        "name": {
-                            "type": "string",
-                        },
-                        "slack": {
-                            "type": "string",
-                        },
-                        "jira": {
-                            "type": "string",
-                        },
+                        "name": {"type": "string",},
+                        "slack": {"type": "string",},
+                        "jira": {"type": "string",},
                     },
                     "required": ["name", "slack", "jira"],
                 },
             ],
         },
-        "is_enabled": {
-            "type": "boolean",
-        },
-        "public": {
-            "type": "boolean",
-        },
-        "public_aliases": {
-            "type": "array",
-            "items": {
-                "type": "string",
-            },
-        },
+        "is_enabled": {"type": "boolean",},
+        "public": {"type": "boolean",},
+        "public_aliases": {"type": "array", "items": {"type": "string",},},
         "probes": {
             "type": "object",
-            "properties": {
-                "web": {
-                    "type": "object",
-                },
-            },
+            "properties": {"web": {"type": "object",},},
             "additionalProperties": False,
         },
         "variables": {
             "type": "object",
             "properties": {
-                "app": {
-                    "$ref": "#/definitions/variables/confSubObjects",
-                },
-                "ope": {
-                    "$ref": "#/definitions/variables/confSubObjects",
-                },
-                "integration": {
-                    "$ref": "#/definitions/variables/confSubObjects",
-                },
-                "secret": {
-                    "$ref": "#/definitions/variables/subObjectSecrets",
-                },
+                "app": {"$ref": "#/definitions/variables/confSubObjects",},
+                "ope": {"$ref": "#/definitions/variables/confSubObjects",},
+                "integration": {"$ref": "#/definitions/variables/confSubObjects",},
+                "secret": {"$ref": "#/definitions/variables/subObjectSecrets",},
             },
             "required": ["app", "ope"],
             "additionalProperties": False,

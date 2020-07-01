@@ -1,79 +1,43 @@
+# pylint: disable=duplicate-code
 """Schemas managed by Nestor"""
 
 SPECS = {
     "variables": {
-        "confSubObjects": {
-            "type": "object",
-            "patternProperties": {
-                "": {
-                    "type": "string",
-                },
-            },
-        },
+        "confSubObjects": {"type": "object", "patternProperties": {"": {"type": "string",},},},
         "subObjectSecrets": {
             "type": "object",
             "patternProperties": {
                 "": {
                     "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": "string",
-                        },
-                        "key": {
-                            "type": "string",
-                        },
-                    },
+                    "properties": {"name": {"type": "string",}, "key": {"type": "string",},},
                 },
             },
         },
-        "projectSubObjects": {
-            "type": "object",
-            "patternProperties": {
-                "": {
-                    "type": "string",
-                },
-            },
-        },
+        "projectSubObjects": {"type": "object", "patternProperties": {"": {"type": "string",},},},
     },
     "scales": {
         "type": "object",
-        "patternProperties": {
-            "": {
-                "$ref": "#/definitions/scales/definitions/scaleSubProperty",
-            },
-        },
+        "patternProperties": {"": {"$ref": "#/definitions/scales/definitions/scaleSubProperty",},},
         "definitions": {
             "scaleSubProperty": {
                 "type": "object",
                 "properties": {
-                    "maxReplicas": {
-                        "type": "integer",
-                    },
-                    "minReplicas": {
-                        "type": "integer",
-                    },
+                    "maxReplicas": {"type": "integer",},
+                    "minReplicas": {"type": "integer",},
                     "targetCPUUtilizationPercentage": {
                         "type": "integer",
                         "maximum": 100,
                         "minimum": 0,
                     },
                 },
-                "required": [
-                    "maxReplicas",
-                    "minReplicas",
-                    "targetCPUUtilizationPercentage",
-                ],
+                "required": ["maxReplicas", "minReplicas", "targetCPUUtilizationPercentage",],
                 "additionalProperties": False,
             },
         },
     },
     "crons": {
         "type": "object",
-        "patternProperties": {
-            "": {
-                "$ref": "#/definitions/crons/definitions/cronProperty",
-            },
-        },
+        "patternProperties": {"": {"$ref": "#/definitions/crons/definitions/cronProperty",},},
         "additionalProperties": False,
         "definitions": {
             "cronProperty": {
@@ -83,12 +47,8 @@ SPECS = {
                         "type": "string",
                         "pattern": "([0-9]{0,2}[*/,-]{0,3}[0-9]*\\s?){5}",
                     },
-                    "concurrency_policy": {
-                        "type": "string",
-                    },
-                    "suspend": {
-                        "type": "boolean",
-                    },
+                    "concurrency_policy": {"type": "string",},
+                    "suspend": {"type": "boolean",},
                 },
                 "required": ["schedule", "concurrency_policy"],
                 "additionalProperties": False,
@@ -100,15 +60,9 @@ SPECS = {
         "patternProperties": {
             "": {
                 "properties": {
-                    "path": {
-                        "type": "string",
-                    },
-                    "delay": {
-                        "type": "integer",
-                    },
-                    "timeout": {
-                        "type": "integer",
-                    },
+                    "path": {"type": "string",},
+                    "delay": {"type": "integer",},
+                    "timeout": {"type": "integer",},
                 },
                 "required": ["path"],
             },
@@ -120,12 +74,8 @@ SPECS = {
             "": {
                 "type": "object",
                 "properties": {
-                    "limit": {
-                        "$ref": "#/definitions/resources/definitions/resourcesSubProperty",
-                    },
-                    "limits": {
-                        "$ref": "#/definitions/resources/definitions/resourcesSubProperty",
-                    },
+                    "limit": {"$ref": "#/definitions/resources/definitions/resourcesSubProperty",},
+                    "limits": {"$ref": "#/definitions/resources/definitions/resourcesSubProperty",},
                     "request": {
                         "$ref": "#/definitions/resources/definitions/resourcesSubProperty",
                     },
@@ -140,20 +90,8 @@ SPECS = {
             "resourcesSubProperty": {
                 "type": "object",
                 "properties": {
-                    "cpu": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                            },
-                            {
-                                "type": "number",
-                                "minimum": 0,
-                            },
-                        ],
-                    },
-                    "memory": {
-                        "type": "string",
-                    },
+                    "cpu": {"anyOf": [{"type": "string",}, {"type": "number", "minimum": 0,},],},
+                    "memory": {"type": "string",},
                 },
             },
         },
