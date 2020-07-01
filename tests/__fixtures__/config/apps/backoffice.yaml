@@ -1,0 +1,8 @@
+sub_domain: backoffice
+variables:
+  ope:
+    VARIABLE_OPE_2: 'ope_2_override'
+    VARIABLE_OPE_3: 'ope_3'
+  app:
+    VARIABLE_APP_2: 'app_2_override'
+    VARIABLE_APP_3: 'app_3'

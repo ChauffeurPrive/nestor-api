@@ -23,11 +23,10 @@ def create_working_repository(app_name):
     # First, update the pristine repository for this app
     pristine_directory = update_pristine_repository(app_name)
 
-    repository_dir = io.get_temporary_copy(pristine_directory, app_name)
+    repository_dir = io.create_temporary_copy(pristine_directory, app_name)
 
     Logger.debug(
-        {app_name, repository_dir},
-        "[git#create_working_directory] Created a working repository",
+        {app_name, repository_dir}, "[git#create_working_directory] Created a working repository",
     )
 
     return repository_dir
