@@ -15,7 +15,7 @@ def deep_merge(destination: dict, source: dict) -> dict:
 
     def _deep_merge_rec(dest, src):
         for key in src:
-            if key in dest and isinstance(dest[key], dict) and isinstance(src[key], dict):
+            if isinstance(dest.get(key), dict) and isinstance(src[key], dict):
                 dest[key] = _deep_merge_rec(dest[key], src[key])
             else:
                 dest[key] = src[key]

@@ -1,7 +1,7 @@
 """Custom error"""
 
 
-class InvalidConfigurationKeyReference(RuntimeError):
+class InvalidConfigurationKeyReference(Exception):
     """Raised when a configuration file contains invalid references"""
 
     def __init__(self, variable_name: str):
