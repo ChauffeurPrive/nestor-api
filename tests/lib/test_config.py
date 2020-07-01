@@ -6,6 +6,7 @@ import pytest
 
 from nestor_api.config.config import Configuration
 from nestor_api.errors.app_configuration_not_found_error import AppConfigurationNotFoundError
+from nestor_api.errors.invalid_configuration_key_reference import InvalidConfigurationKeyReference
 import nestor_api.lib.config as config
 import nestor_api.lib.io as io
 
@@ -86,3 +87,58 @@ def test_get_project_config_when_not_found(mocker):
 
     with pytest.raises(FileNotFoundError):
         config.get_project_config()
+
+
+def test_resolve_variables_deep():
+    # pylint: disable=protected-access
+    result = config._resolve_variables_deep(
+        {
+            "A": "value_a",
+            "B": "value_b",
+            "C": {
+                "C1": "__{{A}}__",
+                "C2": "__{{key_not_present}}__",
+                "C3": "__{{A}}__{{B}}__{{key_not_present}}__",
+                "C4": "A",
+                "C5": "{{C1}}",
+            },
+            "D": [
+                "value_d1",
+                "__{{A}}__",
+                "__{{key_not_present}}__",
+                "__{{A}}__{{B}}__{{key_not_present}}__",
+            ],
+            "E": [{"E1": {"E11": "deep__{{A}}__"}}],
+            "F": 42,
+        }
+    )
+
+    assert result == {
+        "A": "value_a",
+        "B": "value_b",
+        "C": {
+            "C1": "__value_a__",
+            "C2": "__{{key_not_present}}__",
+            "C3": "__value_a__value_b__{{key_not_present}}__",
+            "C4": "A",
+            "C5": "{{C1}}",
+        },
+        "D": [
+            "value_d1",
+            "__value_a__",
+            "__{{key_not_present}}__",
+            "__value_a__value_b__{{key_not_present}}__",
+        ],
+        "E": [{"E1": {"E11": "deep__value_a__"}}],
+        "F": 42,
+    }
+
+
+def test_resolve_variables_deep_with_invalid_reference():
+    with pytest.raises(InvalidConfigurationKeyReference) as err:
+        # pylint: disable=protected-access
+        config._resolve_variables_deep(
+            {"object": {}, "key": "__{{object}}__",}
+        )
+
+    assert str(err.value) == 'Referenced variable "object" should be a string'
