@@ -26,7 +26,7 @@ def test_change_environment(mocker):
 
 
 @pytest.mark.usefixtures("config")
-def test_create_temporary_directory(mocker):
+def test_create_temporary_config_copy(mocker):
     spy = mocker.patch.object(io, "create_temporary_copy", return_value="/temporary/path")
 
     path = config.create_temporary_config_copy()
