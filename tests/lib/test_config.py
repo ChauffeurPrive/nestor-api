@@ -158,19 +158,19 @@ def test_resolve_variables_deep_with_invalid_reference():
     assert str(err.value) == "Invalid configuration"
 
     assert err.value.errors[0].path == "CONFIG.simple_key"
-    assert err.value.errors[0].message == "variable should be a string"
+    assert err.value.errors[0].message == "Referenced variable should resolved to a string"
 
     assert err.value.errors[1].path == "CONFIG.array[2]"
-    assert err.value.errors[1].message == "variable should be a string"
+    assert err.value.errors[1].message == "Referenced variable should resolved to a string"
 
     assert err.value.errors[2].path == "CONFIG.dict.b"
-    assert err.value.errors[2].message == "variable should be a string"
+    assert err.value.errors[2].message == "Referenced variable should resolved to a string"
 
     assert err.value.errors[3].path == "CONFIG.deep_dict.sub_dict.b"
-    assert err.value.errors[3].message == "variable should be a string"
+    assert err.value.errors[3].message == "Referenced variable should resolved to a string"
 
     assert err.value.errors[4].path == "CONFIG.deep_dict.sub_array[0].a"
-    assert err.value.errors[4].message == "variable should be a string"
+    assert err.value.errors[4].message == "Referenced variable should resolved to a string"
 
     assert err.value.errors[5].path == "CONFIG.deep_dict.sub_array[1].b"
-    assert err.value.errors[5].message == "variable should be a string"
+    assert err.value.errors[5].message == "Referenced variable should resolved to a string"

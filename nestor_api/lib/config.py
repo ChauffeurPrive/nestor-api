@@ -67,7 +67,7 @@ def _resolve_variable(template: str, variables: dict, path: str) -> str:
         var_value = variables.get(var_name)
         if var_value is not None:
             if not isinstance(var_value, str):
-                raise ConfigurationError(path, "variable should be a string")
+                raise ConfigurationError(path, "Referenced variable should resolved to a string")
 
             final_value = re.sub(f"{{{{{var_name}}}}}", var_value, final_value)
 
