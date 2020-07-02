@@ -61,7 +61,7 @@ def _resolve_variable(template: str, variables: dict) -> str:
     final_value = template
 
     # Resolve pattern '{{variable}}'
-    referenced_names = re.findall(r"{{([\w.]+)}}", template)
+    referenced_names = re.findall(r"{{([\w\-.]+)}}", template)
     for var_name in referenced_names:
         var_value = variables.get(var_name)
         if var_value is not None:

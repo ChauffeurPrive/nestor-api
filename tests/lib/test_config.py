@@ -100,7 +100,7 @@ def test_resolve_variables_deep():
                 "C2": "__{{key_not_present}}__",
                 "C3": "__{{A}}__{{B}}__{{key_not_present}}__",
                 "C4": "A",
-                "C5": "{{C1}}",
+                "C5": "{{C1}}__{{key-with.special_characters}}",
             },
             "D": [
                 "value_d1",
@@ -110,6 +110,7 @@ def test_resolve_variables_deep():
             ],
             "E": [{"E1": {"E11": "deep__{{A}}__"}}],
             "F": 42,
+            "key-with.special_characters": "amazing-value",
         }
     )
 
@@ -121,7 +122,7 @@ def test_resolve_variables_deep():
             "C2": "__{{key_not_present}}__",
             "C3": "__value_a__value_b__{{key_not_present}}__",
             "C4": "A",
-            "C5": "{{C1}}",
+            "C5": "{{C1}}__amazing-value",
         },
         "D": [
             "value_d1",
@@ -131,6 +132,7 @@ def test_resolve_variables_deep():
         ],
         "E": [{"E1": {"E11": "deep__value_a__"}}],
         "F": 42,
+        "key-with.special_characters": "amazing-value",
     }
 
 
