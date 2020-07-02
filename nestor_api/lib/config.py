@@ -1,10 +1,14 @@
 """Configuration library"""
 
+import copy
 import errno
 import os
+import re
 
 from nestor_api.config.config import Configuration
-from nestor_api.errors.app_configuration_not_found_error import AppConfigurationNotFoundError
+from nestor_api.errors.config.aggregated_configuration_error import AggregatedConfigurationError
+from nestor_api.errors.config.app_configuration_not_found_error import AppConfigurationNotFoundError
+from nestor_api.errors.config.configuration_error import ConfigurationError
 import nestor_api.lib.io as io
 import nestor_api.utils.dict as dict_utils
 
@@ -38,7 +42,7 @@ def get_app_config(app_name: str) -> dict:
     # Awaiting for implementation
     # validate configuration using nestor-config-validator
 
-    return _resolve_variables(config)
+    return _resolve_variables_deep(config)
 
 
 def get_project_config() -> dict:
@@ -51,15 +55,63 @@ def get_project_config() -> dict:
 
     project_config = io.from_yaml(project_config_path)
 
-    return _resolve_variables(project_config)
+    return _resolve_variables_deep(project_config)
 
 
-def _resolve_variables(config: dict) -> dict:
+def _resolve_variable(template: str, variables: dict, path: str) -> str:
+    final_value = template
+
+    # Resolve pattern '{{variable}}'
+    referenced_names = re.findall(r"{{([\w\-.]+)}}", template)
+    for var_name in referenced_names:
+        var_value = variables.get(var_name)
+        if var_value is not None:
+            if not isinstance(var_value, str):
+                raise ConfigurationError(path, "Referenced variable should resolved to a string")
+
+            final_value = re.sub(f"{{{{{var_name}}}}}", var_value, final_value)
+
     # Awaiting for implementation
-    # variable resolutions in values
-    #
-    # example:
-    #    base_domain: 'website.com'
-    #    variables:
-    #        API_URL: 'api.{{base_domain}}'     -->    'api.website.com'
-    return config
+    # -> Resolve vault definitions "!vault:xxx"
+
+    return final_value
+
+
+def _resolve_variables_deep(config: dict) -> dict:
+    def __resolve_list(list_values, variables, path, errors):
+        resolved_values = []
+        for idx, value in enumerate(list_values):
+            resolved, errors = __resolve(value, variables, f"{path}[{idx}]", errors)
+            resolved_values.append(resolved)
+        return resolved_values, errors
+
+    def __resolve_dict(dict_values, variables, path, errors):
+        for key in dict_values:
+            resolved_value, errors = __resolve(dict_values[key], variables, f"{path}.{key}", errors)
+            dict_values[key] = resolved_value
+        return dict_values, errors
+
+    def __resolve_str(value, variables, path, errors):
+        try:
+            resolved_value = _resolve_variable(value, variables, path)
+            return resolved_value, errors
+        except ConfigurationError as err:
+            errors.append(err)
+            return value, errors
+
+    def __resolve(value, variables, path, errors):
+        if isinstance(value, list):
+            return __resolve_list(value, variables, path, errors)
+        if isinstance(value, dict):
+            return __resolve_dict(value, variables, path, errors)
+        if isinstance(value, str):
+            return __resolve_str(value, variables, path, errors)
+        return value, errors
+
+    # The top-level of config is used as `variables`
+    resolved_config, errors = __resolve(copy.deepcopy(config), config, "CONFIG", [])
+
+    if len(errors) > 0:
+        raise AggregatedConfigurationError(errors)
+
+    return resolved_config
