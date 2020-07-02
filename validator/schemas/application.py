@@ -28,34 +28,9 @@ APPLICATION_SCHEMA = {
                 "required": ["name", "is_cronjob", "start_command"],
             },
         },
-        "databases": {
-            "type": "object",
-            "properties": {
-                "postgres": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "db": {"type": "string",},
-                            "password": {"type": "string",},
-                            "username": {"type": "string",},
-                        },
-                    },
-                },
-            },
-        },
         "scales": {"$ref": "#/definitions/scales",},
         "crons": {"$ref": "#/definitions/crons",},
         "resources": {"$ref": "#/definitions/resources",},
-        "build": {
-            "type": "object",
-            "properties": {
-                "variables": {
-                    "type": "object",
-                    "patternProperties": {"": {"type": ["boolean", "integer", "string"],},},
-                },
-            },
-        },
         "templateVars": {
             "type": "object",
             "properties": {
@@ -68,62 +43,6 @@ APPLICATION_SCHEMA = {
                     "type": "string",
                     "enum": ["true", "false"],
                     "description": "Define if the application web is public accessible or not",
-                },
-                "tplTeam": {
-                    "type": "string",
-                    "example": "team-payment",
-                    "description": "Define the team that is owner.",
-                },
-                "tplSlackAlertingChannel": {
-                    "type": "string",
-                    "example": "team-payment-alerts",
-                    "description": "Define the slack channel for alerting",
-                },
-                "tplWeb2xxThreshold": {
-                    "type": "string",
-                    "pattern": "^[\b100\b|\b90\b|\b80\b|\b70\b|\b60\b|\b50\b|\b0\b|\bdefault\b]",
-                    "example": "50",
-                    "description": "Define the threshold for 2xx status. If below alert is raised.",
-                },
-                "tplWeb5xxThreshold": {
-                    "type": "string",
-                    "pattern": "^[\b40\b|\b10\b|\b5\b|\b0\b|\bdefault\b]",
-                    "example": "40",
-                    "description": "Define the threshold for 5xx errors. If above alert is raised.",
-                },
-                "tplWeb50thLatencyThreshold": {
-                    "type": "string",
-                    "pattern": "^0.0[12458]|^0.12$|^0.30$|^[123]$|^default$",
-                    "example": "0.12",
-                    "description": "Define the threshold for 50th percentile latency in ms."
-                                   + "If above alert is raised.",
-                },
-                "tplWeb95thLatencyThreshold": {
-                    "type": "string",
-                    "pattern": "^0.0[123457]|^0.[123456]0$|^[124]$|^1.5$|^default$",
-                    "example": "1.5",
-                    "description": "Define the threshold for 95th percentile latency in ms."
-                                   + "If above alert is raised.",
-                },
-                "tplSLO": {
-                    "type": "string",
-                    "pattern": "^99$|^99.[9]{1,3}|^none$",
-                    "example": "99.9",
-                    "description": "Define SLO in terms of availability",
-                },
-                "tplSLI": {
-                    "type": "string",
-                    "enum": [
-                        "success_2xx",
-                        "error_5xx",
-                        "latency_50th",
-                        "latency_95th",
-                        "error_5xx_latency_50th",
-                        "error_5xx_latency_95th",
-                        "error_5xx_latency_50th_latency_95th",
-                        "none",
-                    ],
-                    "description": "Define the SLI to use to calculate availability",
                 },
                 "tplExpandedTimeout": {
                     "type": "integer",
@@ -160,20 +79,6 @@ APPLICATION_SCHEMA = {
             "properties": {"image_name": {"type": "string",}, "dockerfile": {"type": "string",},},
             "additionalProperties": False,
         },
-        "teams": {
-            "oneOf": [
-                {"type": "array", "items": {"type": "string",},},
-                {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string",},
-                        "slack": {"type": "string",},
-                        "jira": {"type": "string",},
-                    },
-                    "required": ["name", "slack", "jira"],
-                },
-            ],
-        },
         "is_enabled": {"type": "boolean",},
         "public": {"type": "boolean",},
         "public_aliases": {"type": "array", "items": {"type": "string",},},
@@ -185,6 +90,7 @@ APPLICATION_SCHEMA = {
         "variables": {
             "type": "object",
             "properties": {
+                # Awaiting for implementation: Explain in a markdown file what the meaning of each part is.
                 "app": {"$ref": "#/definitions/variables/confSubObjects",},
                 "ope": {"$ref": "#/definitions/variables/confSubObjects",},
                 "integration": {"$ref": "#/definitions/variables/confSubObjects",},

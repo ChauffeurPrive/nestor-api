@@ -6,23 +6,28 @@ from pathlib import Path
 import jsonschema
 import yaml
 
-from validator.config.config import Configuration
+from validator.config.config import Configuration, SupportedValidations
+from validator.errors.errors import InvalidTargetPathError
 from validator.schemas.schema import SCHEMAS
 
 
 def build_app_path():
     """Builds the path for /apps folder"""
-    target_path = Configuration.get_target_path() or os.path.dirname(__file__)
+    target_path = Configuration.get_target_path()
+    if target_path is None:
+        raise InvalidTargetPathError(target_path)
     return os.path.join(target_path, "apps")
 
 
 def build_project_conf_path():
     """Builds the path for project.yaml"""
-    target_path = Configuration.get_target_path() or os.path.dirname(__file__)
+    target_path = Configuration.get_target_path()
+    if target_path is None:
+        raise InvalidTargetPathError(target_path)
     return os.path.join(target_path, "project.yaml")
 
 
-def validate_file(file_path, schema):
+def validate_file(file_path: str, schema: dict) -> str:
     """Validates a file with a given schema
 
     Args:
@@ -38,49 +43,41 @@ def validate_file(file_path, schema):
         return jsonschema.validate(yaml_file, schema)
 
 
-def validate():
+def validate_deployment_files():
     """Main validate function
+
+    This function executes a specific validation configured with NESTOR_VALIDATION_TARGET
+    to a list of files in a given path configured with NESTOR_CONFIG_PATH.
 
     Raises:
         Exception: If the configuration path has not been configured.
-        Exception: [description]
-
-    Returns:
-        [type]: [description]
+        Exception: If the configuration path does not exist
     """
     apps_path = build_app_path()
-    project_config_file_path = build_project_conf_path()
 
     if not Path(apps_path).exists():
-        raise Exception(
+        raise NotADirectoryError(
             f"{apps_path} does not look like a valid configuration path. Verify the path exists"
         )
 
-    validations = []
     validation_target = Configuration.get_validation_target()
 
-    if validation_target == "APPLICATIONS":
+    if validation_target == str(SupportedValidations.APPLICATIONS):
         # Validate each application file
-        files_in_dir = [f for f in os.listdir() if os.path.isfile(f)]
+        files_in_dir = [
+            f for f in os.listdir(apps_path) if os.path.isfile(f) and not f.startswith(".")
+        ]
         for file in files_in_dir:
             application_conf_file_path = os.path.join(apps_path, file)
-            validation_result = validate_file(
-                application_conf_file_path, SCHEMAS[validation_target]
-            )
+            validate_file(application_conf_file_path, SCHEMAS[validation_target])
 
-            # pylint: disable TODO Add log if the validation was successful or not
-            validations.append(validation_result)
-    elif validation_target == "PROJECT":
-        # Validate on project.yaml
-        validation_result = validate_file(project_config_file_path, SCHEMAS[validation_target])
+    elif validation_target == str(SupportedValidations.PROJECTS):
+        # Validate project.yaml
+        project_config_file_path = build_project_conf_path()
+        validate_file(project_config_file_path, SCHEMAS[validation_target])
 
-        # pylint: disable TODO Add log if the validation was successful or not
-        validations.append(validation_result)
     else:
         raise Exception(
             "There is no configuration to be validated. "
             + "Be sure to define a valid NESTOR_VALIDATION_TARGET"
         )
-
-    # pylint: disable TODO pretty print validations
-    return validations

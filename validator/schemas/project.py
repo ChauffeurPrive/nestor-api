@@ -41,6 +41,7 @@ PROJECT_SCHEMA = {
             "required": ["build", "registries"],
             "additionalProperties": False,
         },
+        # Awaiting for implementation - To be specified the shape of deployments
         "deployments": {},
         "concurrency_policy": {"type": "string",},
         "scales": {"$ref": "#/definitions/scales",},
@@ -82,8 +83,6 @@ PROJECT_SCHEMA = {
         "probes",
         "variables",
         "workflow",
-        "slack",
-        "jira",
     ],
     "additionalProperties": True,
 }
