@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-import jsonschema
+import jsonschema  # type: ignore
 import yaml
 
 from validator.config.config import Configuration, SupportedValidations
@@ -11,7 +11,7 @@ from validator.errors.errors import InvalidTargetPathError
 from validator.schemas.schema import SCHEMAS
 
 
-def build_app_path():
+def build_apps_path():
     """Builds the path for /apps folder"""
     target_path = Configuration.get_target_path()
     if target_path is None:
@@ -53,7 +53,7 @@ def validate_deployment_files():
         Exception: If the configuration path has not been configured.
         Exception: If the configuration path does not exist
     """
-    apps_path = build_app_path()
+    apps_path = build_apps_path()
 
     if not Path(apps_path).exists():
         raise NotADirectoryError(

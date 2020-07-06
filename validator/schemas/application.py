@@ -90,7 +90,7 @@ APPLICATION_SCHEMA = {
         "variables": {
             "type": "object",
             "properties": {
-                # Awaiting for implementation: Explain in a markdown file what the meaning of each part is.
+                # Awaiting for implementation Explain in a markdown file the meaning of each part
                 "app": {"$ref": "#/definitions/variables/confSubObjects",},
                 "ope": {"$ref": "#/definitions/variables/confSubObjects",},
                 "integration": {"$ref": "#/definitions/variables/confSubObjects",},

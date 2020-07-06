@@ -10,7 +10,8 @@ class InvalidTargetPathError(Exception):
         )
 
 
-class ConfigurationNotValidError(Exception):
+# Awaiting for implementation - Will be used while reporting errors
+class ConfigurationNotValidError(Exception):  # pragma: no cover
     """Exception raised when a configuration is invalid"""
 
     def __init__(self, validation_errors):

@@ -3,29 +3,29 @@
 import os
 from pathlib import Path
 
-from jsonschema import ValidationError
+from jsonschema import ValidationError  # type: ignore
 import pytest
 
-from tests.__fixtures__.example_schema import EXAMPLE_SCHEMA
+from tests.__fixtures__.example_schema import EXAMPLE_SCHEMA  # type: ignore
 from validator.config.config import Configuration
 from validator.errors.errors import InvalidTargetPathError
 import validator.validate as config_validator
 
 
-def test_build_app_path_with_env(mocker):
-    mocker.setenv("NESTOR_CONFIG_PATH", "/some/target/path")
-    app_path = config_validator.build_app_path()
+def test_build_apps_path_with_env(monkeypatch):
+    monkeypatch.setenv("NESTOR_CONFIG_PATH", "/some/target/path")
+    app_path = config_validator.build_apps_path()
     assert app_path == "/some/target/path/apps"
 
 
-def test_build_app_path_not_set(mocker):
+def test_build_apps_path_not_set(mocker):
     mocker.patch.object(Configuration, "get_target_path", return_value=None)
     with pytest.raises(InvalidTargetPathError):
-        config_validator.build_app_path()
+        config_validator.build_apps_path()
 
 
-def test_build_project_conf_path_with_env(mocker):
-    mocker.setenv("NESTOR_CONFIG_PATH", "/some/target/path")
+def test_build_project_conf_path_with_env(monkeypatch):
+    monkeypatch.setenv("NESTOR_CONFIG_PATH", "/some/target/path")
     project_conf_path = config_validator.build_project_conf_path()
     assert project_conf_path == "/some/target/path/project.yaml"
 
@@ -59,7 +59,7 @@ def test_validate_invalid_file():
 
 
 def test_validate_error_apps_dir_not_exists(mocker):
-    mocker.patch.object(config_validator, "build_app_path", return_value="some/target/path")
+    mocker.patch.object(config_validator, "build_apps_path", return_value="some/target/path")
     expected_message = "some/target/path does not look like a valid configuration path. Verify the path exists"  # pylint: disable=line-too-long
     with pytest.raises(Exception, match=expected_message):
         config_validator.validate_deployment_files()
@@ -67,7 +67,7 @@ def test_validate_error_apps_dir_not_exists(mocker):
 
 def test_validate_error_validation_target(mocker):
     fixtures_path = Path(os.path.dirname(__file__), "..", "__fixtures__").resolve()
-    mocker.patch.object(config_validator, "build_app_path", return_value=fixtures_path)
+    mocker.patch.object(config_validator, "build_apps_path", return_value=fixtures_path)
     mocker.patch.object(Configuration, "get_validation_target", return_value="SOME_VALUE")
     with pytest.raises(
         Exception,  # pylint: disable=bad-continuation
@@ -80,6 +80,6 @@ def test_validate(mocker):
     real_config_fixture_path = Path(
         os.path.dirname(__file__), "..", "__fixtures__", "validator"
     ).resolve()
-    mocker.patch.object(config_validator, "build_app_path", return_value=real_config_fixture_path)
+    mocker.patch.object(config_validator, "build_apps_path", return_value=real_config_fixture_path)
     mocker.patch.object(Configuration, "get_validation_target", return_value="APPLICATIONS")
     config_validator.validate_deployment_files()
