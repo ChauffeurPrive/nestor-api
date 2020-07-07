@@ -4,11 +4,17 @@ This module contains the logic needed to validate deployment files with a define
 
 The deployment files define applications or projects.
 
+## Table of Contents
+1. [Application Configuration](#applicationConfiguration)
+2. [Kubernetes Configuration](#kubernetesConfiguration)
+
+<a name="applicationConfiguration"></a>
 ## Application Configuration
 
 In each file you will define the application that you want to deploy, few fields are required to setup a new application. There are many supported values which are optional that could be useful for your deployment. You can read more about them in the following sections and the schemas definition.
 
-#### Application Example
+<a name="applicationConfiguration"></a>
+#### Application Example 
 This is how a basic configuration for an application looks like, this example contains the minimum required fields.
 
 ```yaml
@@ -27,7 +33,7 @@ To further customize the deployment of your application, you can add the followi
 ### Processes
 
 A project can contain multiple processes such as workers, web processes and more.
-The structure to define a process is the following:
+The structure to define a process is the following one:
 
 ```yaml
 # Defining a simple process
@@ -53,19 +59,24 @@ crons:
     concurrency_policy: 'Forbid' # Allow, Forbid or Replace concurrency of cronjobs, STRING - Required. [Kubernetes documentation](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
     schedule: '* * * * *' # STRING - Required
     suspend:              # BOOLEAN
-  another-resource: ...
+  another-resource:
+    schedule: '* * * * *'
+    # etc
 ```
+
+<a name="kubernetesConfiguration"></a>
+## Kubernetes Configuration 
 
 ### Scales
 When you deploy an application in a Kubernetes environment, you define how many replicas you would like to run. 
-Each replica represents a Kubernetes POD that encapsulates your application container. 
+Each replica represents a Kubernetes Pod that encapsulates your application container. 
 And also you can increase, or reduce the number of replicas in the given limit.
 
 ```yaml
 scales:
   my-process:         # Process to scale
     min-replicas: 1   # Minimal number of pods, INTEGER - Required
-    max-replicas: 10  # Minimal number of pos, INTEGER - Required
+    max-replicas: 10  # Minimal number of pods, INTEGER - Required
     targetCPUUtilizationPercentage: 80 # Percentage of CPU which will trigger a horizontal scaling when it is exceeded, INTEGER, 0 <= x <= 100 - Required
   another-process: 
     min-replicas: 1
@@ -101,7 +112,7 @@ Kubernetes has service settings to allow to expose an application running on a s
 
 In this section you can define variables used in configuration templates when building the kubernetes configuration before deployment. Here are the available variables:
 
-**_Note_**: All the variables should be prefixed by `tpl`.
+**_Note_**: All the variables should be prefixed by `tpl`. To avoid colliding with the 
 
 ```yaml
 templateVars:         # Variables used in conf templates
@@ -110,7 +121,7 @@ templateVars:         # Variables used in conf templates
   tplExpandedTimeout: # Define the timeout on the ingress controller, STRING
   tplSessionAffinity: # Activate or deactivate session affinity on ingress controller, BOOLEAN
   tplTerminationGracePeriod: # Define POD termination grace period, INTEGER
-  tplCanary: # Define name for canary, STRING
+  tplCanary:          # Define name for canary, STRING
 ```
 
 ### Dependencies
@@ -123,11 +134,11 @@ dependencies:
   - voice-service
   - payment-service
   # .. and more
-  # if your application can run isolated, you can omit this section
+  # if your application does not have dependencies, you can omit this section
 ```
 
 ### Public
-Determines if the project is publicly available for other services in your kubernetes namespace, this will allow internal interaction between applications via 
+Determines if the project is publicly available for other services in your kubernetes namespace, this will allow internal interaction between applications.
 
 ```yaml
 public: true 
@@ -148,14 +159,14 @@ public_aliases:
 
 ### Probes
 
-In this section, you can define some probes Kubernetes' probes for the web process. It is currently not possible to define probes for other processes.
+In this section, you can define some Kubernetes' probes for the web process. It is currently not possible to define probes for other processes.
 
 ```yaml
 probes:
   web:
     liveness:
-      delay: 20  # NUMBER
-      path: /heartbeat   # STRING
+      delay: 20         # NUMBER
+      path: /heartbeat  # STRING
 ```
 
 **_Note_**: If you need more documentation on what probes are and their usage, visit the [official Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
