@@ -5,15 +5,14 @@ This module contains the logic needed to validate deployment files with a define
 The deployment files define applications or projects.
 
 ## Table of Contents
-1. [Application Configuration](#applicationConfiguration)
-2. [Kubernetes Configuration](#kubernetesConfiguration)
+1. [Application Configuration](#application-configuration)
+2. [Kubernetes Configuration](#kubernetes-configuration)
 
-<a name="applicationConfiguration"></a>
+
 ## Application Configuration
 
 In each file you will define the application that you want to deploy, few fields are required to setup a new application. There are many supported values which are optional that could be useful for your deployment. You can read more about them in the following sections and the schemas definition.
 
-<a name="applicationConfiguration"></a>
 #### Application Example 
 This is how a basic configuration for an application looks like, this example contains the minimum required fields.
 
@@ -55,22 +54,23 @@ You can define the crons configuration with the following structure.
 
 ```yaml
 crons:
-  my-cronjob: # Cronjob to define, it must be the same name as the cronjob defined in processes
-    concurrency_policy: 'Forbid' # Allow, Forbid or Replace concurrency of cronjobs, STRING - Required. [Kubernetes documentation](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+  my-cronjob: # Cronjob to define 
+              # it must be the same name as defined in processes
+    concurrency_policy: 'Forbid' # Allow, Forbid or Replace concurrency of cronjobs, STRING - Required. 
     schedule: '* * * * *' # STRING - Required
     suspend:              # BOOLEAN
   another-resource:
     schedule: '* * * * *'
-    # etc
 ```
 
-<a name="kubernetesConfiguration"></a>
+**_Note_**: You can read more about the concurrency policies in this section of the [Kubernetes documentation](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+
 ## Kubernetes Configuration 
 
 ### Scales
 When you deploy an application in a Kubernetes environment, you define how many replicas you would like to run. 
 Each replica represents a Kubernetes Pod that encapsulates your application container. 
-And also you can increase, or reduce the number of replicas in the given limit.
+You can also increase, or reduce the number of replicas in the given limit.
 
 ```yaml
 scales:
@@ -112,7 +112,7 @@ Kubernetes has service settings to allow to expose an application running on a s
 
 In this section you can define variables used in configuration templates when building the kubernetes configuration before deployment. Here are the available variables:
 
-**_Note_**: All the variables should be prefixed by `tpl`. To avoid colliding with the 
+**_Note_**: All the variables should be prefixed by `tpl`. To avoid colliding with the default values for your Kubernetes Namespace.
 
 ```yaml
 templateVars:         # Variables used in conf templates
@@ -126,7 +126,7 @@ templateVars:         # Variables used in conf templates
 
 ### Dependencies
 
-This section can be used when your application depends or makes use of another applications. In this section you can specify the list dependencies used by your project. 
+This section can be used when your application depends or makes use of other applications. In this section you can specify the list dependencies used by your project. 
 
 ```yaml
 dependencies:
@@ -178,9 +178,6 @@ The idea is to separate concerns between the variables that your application nee
 
 - `ope`: These are used to specify operational values such as URLs, certificates, auth public keys, connection strings, integration with third party services and other services information used by your app.
 - `app`: These are the variables used internally for adding logic to the application, such as: fixed values, timeouts, default values, feature flags, ids, and more.
-
-
-Environment variables used in the application.
 
 ```yaml
 variables:
