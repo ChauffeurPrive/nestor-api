@@ -7,11 +7,6 @@ import nestor_api.lib.io as io
 from nestor_api.utils.logger import Logger
 
 
-def clone(repository: str, remote_repository_url: str, branch_name: str = "master"):
-    """Clone a repository branch locally"""
-    return io.execute(f"git clone {remote_repository_url} -b {branch_name}", repository)
-
-
 def branch(repository_dir, branch_name):
     """Checkout a branch of a repository"""
     Logger.debug({"path": repository_dir}, "[git#branch] Repository path")
