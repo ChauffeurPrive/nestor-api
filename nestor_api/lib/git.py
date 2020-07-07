@@ -42,11 +42,6 @@ def get_remote_url(repository_dir, remote_name="origin"):
     return io.execute(f"git remote get-url {remote_name}", repository_dir)
 
 
-def get_branch_hash(remote_repository_url: str, branch_name: str):
-    """Get hash of the specified branch HEAD"""
-    return io.execute(f"git ls-remote {remote_repository_url} {branch_name}")
-
-
 def get_last_commit_hash(repository_dir):
     """Retrieves the last commit hash of a repository (locally)"""
     return io.execute("git rev-parse --short HEAD", repository_dir)

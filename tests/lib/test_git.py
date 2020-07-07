@@ -219,10 +219,3 @@ class TestGitLibrary:
                 call("git reset --hard origin/master", "/path_to/a_git_repository"),
             ]
         )
-
-    def test_get_branch_hash(self, io_mock):
-        """Should send the right command to io lib."""
-        git.get_branch_hash("ssh://some-external-address/project.git", "master")
-        io_mock.execute.assert_called_once_with(
-            "git ls-remote ssh://some-external-address/project.git master"
-        )
