@@ -31,7 +31,7 @@ class TestConfigLibrary(unittest.TestCase):
         path = config.create_temporary_config_copy()
 
         io_mock.create_temporary_copy.assert_called_once_with("tests/__fixtures__/config", "config")
-        assert path == "/temporary/path"
+        self.assertEqual(path, "/temporary/path")
 
     @patch("nestor_api.lib.config.get_project_config", autospec=True)
     @patch("nestor_api.lib.config.Configuration", autospec=True)
@@ -58,23 +58,26 @@ class TestConfigLibrary(unittest.TestCase):
 
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
         io_mock.from_yaml.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
-        assert get_project_config_mock.call_count == 1
-        assert app_config == {
-            "domain": "website.com",
-            "sub_domain": "backoffice",
-            "variables": {
-                "ope": {
-                    "VARIABLE_OPE_1": "ope_1",
-                    "VARIABLE_OPE_2": "ope_2_override",
-                    "VARIABLE_OPE_3": "ope_3",
-                },
-                "app": {
-                    "VARIABLE_APP_1": "app_1",
-                    "VARIABLE_APP_2": "app_2_override",
-                    "VARIABLE_APP_3": "app_3",
+        get_project_config_mock.assert_called_once()
+        self.assertEqual(
+            app_config,
+            {
+                "domain": "website.com",
+                "sub_domain": "backoffice",
+                "variables": {
+                    "ope": {
+                        "VARIABLE_OPE_1": "ope_1",
+                        "VARIABLE_OPE_2": "ope_2_override",
+                        "VARIABLE_OPE_3": "ope_3",
+                    },
+                    "app": {
+                        "VARIABLE_APP_1": "app_1",
+                        "VARIABLE_APP_2": "app_2_override",
+                        "VARIABLE_APP_3": "app_3",
+                    },
                 },
             },
-        }
+        )
 
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_app_config_when_not_found(self, configuration_mock, io_mock):
@@ -101,13 +104,16 @@ class TestConfigLibrary(unittest.TestCase):
 
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/project.yaml")
         io_mock.from_yaml.assert_called_once_with("tests/__fixtures__/config/project.yaml")
-        assert environment_config == {
-            "domain": "website.com",
-            "variables": {
-                "ope": {"VARIABLE_OPE_1": "ope_1", "VARIABLE_OPE_2": "ope_2"},
-                "app": {"VARIABLE_APP_1": "app_1", "VARIABLE_APP_2": "app_2"},
+        self.assertEqual(
+            environment_config,
+            {
+                "domain": "website.com",
+                "variables": {
+                    "ope": {"VARIABLE_OPE_1": "ope_1", "VARIABLE_OPE_2": "ope_2"},
+                    "app": {"VARIABLE_APP_1": "app_1", "VARIABLE_APP_2": "app_2"},
+                },
             },
-        }
+        )
 
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config_when_not_found(self, configuration_mock, io_mock):
@@ -143,26 +149,29 @@ class TestConfigLibrary(unittest.TestCase):
             }
         )
 
-        assert result == {
-            "A": "value_a",
-            "B": "value_b",
-            "C": {
-                "C1": "__value_a__",
-                "C2": "__{{key_not_present}}__",
-                "C3": "__value_a__value_b__{{key_not_present}}__",
-                "C4": "A",
-                "C5": "{{C1}}__amazing-value",
+        self.assertEqual(
+            result,
+            {
+                "A": "value_a",
+                "B": "value_b",
+                "C": {
+                    "C1": "__value_a__",
+                    "C2": "__{{key_not_present}}__",
+                    "C3": "__value_a__value_b__{{key_not_present}}__",
+                    "C4": "A",
+                    "C5": "{{C1}}__amazing-value",
+                },
+                "D": [
+                    "value_d1",
+                    "__value_a__",
+                    "__{{key_not_present}}__",
+                    "__value_a__value_b__{{key_not_present}}__",
+                ],
+                "E": [{"E1": {"E11": "deep__value_a__"}}],
+                "F": 42,
+                "key-with.special_characters": "amazing-value",
             },
-            "D": [
-                "value_d1",
-                "__value_a__",
-                "__{{key_not_present}}__",
-                "__value_a__value_b__{{key_not_present}}__",
-            ],
-            "E": [{"E1": {"E11": "deep__value_a__"}}],
-            "F": 42,
-            "key-with.special_characters": "amazing-value",
-        }
+        )
 
     # pylint: disable=unused-argument
     def test_resolve_variables_deep_with_invalid_reference(self, io_mock):
@@ -185,22 +194,35 @@ class TestConfigLibrary(unittest.TestCase):
             )
 
             err = context.exception
-            assert str(err.value) == "Invalid configuration"
-
-            assert err.value.errors[0].path == "CONFIG.simple_key"
-            assert err.value.errors[0].message == "Referenced variable should resolved to a string"
-
-            assert err.value.errors[1].path == "CONFIG.array[2]"
-            assert err.value.errors[1].message == "Referenced variable should resolved to a string"
-
-            assert err.value.errors[2].path == "CONFIG.dict.b"
-            assert err.value.errors[2].message == "Referenced variable should resolved to a string"
-
-            assert err.value.errors[3].path == "CONFIG.deep_dict.sub_dict.b"
-            assert err.value.errors[3].message == "Referenced variable should resolved to a string"
-
-            assert err.value.errors[4].path == "CONFIG.deep_dict.sub_array[0].a"
-            assert err.value.errors[4].message == "Referenced variable should resolved to a string"
-
-            assert err.value.errors[5].path == "CONFIG.deep_dict.sub_array[1].b"
-            assert err.value.errors[5].message == "Referenced variable should resolved to a string"
+            self.assertEqual(
+                err,
+                {
+                    "value": "Invalid configuration",
+                    "errors": [
+                        {
+                            "path": "CONFIG.simple_key",
+                            "message": "Referenced variable should resolved to a string",
+                        },
+                        {
+                            "path": "CONFIG.array[2]",
+                            "message": "Referenced variable should resolved to a string",
+                        },
+                        {
+                            "path": "CONFIG.dict.b",
+                            "message": "Referenced variable should resolved to a string",
+                        },
+                        {
+                            "path": "CONFIG.deep_dict.sub_dict.b",
+                            "message": "Referenced variable should resolved to a string",
+                        },
+                        {
+                            "path": "CONFIG.deep_dict.sub_array[0].a",
+                            "message": "Referenced variable should resolved to a string",
+                        },
+                        {
+                            "path": "CONFIG.deep_dict.sub_array[1].b",
+                            "message": "Referenced variable should resolved to a string",
+                        },
+                    ],
+                },
+            )
