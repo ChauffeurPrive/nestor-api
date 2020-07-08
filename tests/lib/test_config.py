@@ -90,7 +90,7 @@ class TestConfigLibrary(unittest.TestCase):
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config(self, configuration_mock, io_mock):
         configuration_mock.get_config_path.return_value = "tests/__fixtures__/config"
-        configuration_mock.get_config_projet_filename.return_value = "project.yaml"
+        configuration_mock.get_config_project_filename.return_value = "project.yaml"
         io_mock.exists.return_value = True
         io_mock.from_yaml.return_value = {
             "domain": "website.com",
@@ -119,7 +119,7 @@ class TestConfigLibrary(unittest.TestCase):
     def test_get_project_config_when_not_found(self, configuration_mock, io_mock):
         io_mock.exists.return_value = False
         configuration_mock.get_config_path.return_value = ""
-        configuration_mock.get_config_projet_filename.return_value = ""
+        configuration_mock.get_config_project_filename.return_value = ""
 
         self.assertRaises(FileNotFoundError, config.get_project_config)
 

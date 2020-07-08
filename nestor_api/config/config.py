@@ -17,7 +17,7 @@ class Configuration:
         return os.getenv("NESTOR_CONFIG_APPS_FOLDER", "apps")
 
     @staticmethod
-    def get_config_projet_filename():
+    def get_config_project_filename():
         """Returns the name of the file holding the project's configuration"""
         return os.getenv("NESTOR_CONFIG_PROJECT_FILENAME", "project.yaml")
 
