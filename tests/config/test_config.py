@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring disable=missing-module-docstring
+# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
 
 import os
 from unittest import TestCase
