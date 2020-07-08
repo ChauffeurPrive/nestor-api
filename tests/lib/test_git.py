@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
-
 import subprocess
 from unittest.mock import call, patch
 
@@ -8,7 +6,6 @@ import pytest
 import nestor_api.lib.git as git
 
 
-# pylint: disable=no-self-use
 @patch("nestor_api.lib.git.io", autospec=True)
 class TestGitLibrary:
     def test_branch_existing(self, io_mock):
