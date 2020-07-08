@@ -1,204 +1,157 @@
-import os
-from pathlib import Path
-import shutil
-import subprocess
+import errno
+from unittest import TestCase
+from unittest.mock import mock_open, patch
 
-import pytest
-
-from nestor_api.config.config import Configuration
 import nestor_api.lib.io as io
 
 
-def test_copy_single_file():
-    fixtures_directory_path = Path(
-        os.path.dirname(__file__), "..", "__fixtures__", "example.yaml"
-    ).resolve()
-    destination_path = Path(
-        os.path.dirname(__file__), "..", "__fixtures__", "example_copy.yaml"
-    ).resolve()
+class TestIoLib(TestCase):
+    @patch("nestor_api.lib.io.shutil", autospec=True)
+    def test_copy_single_file(self, shutil_mock):
+        shutil_mock.copytree.side_effect = OSError(errno.ENOTDIR, "some reason")
+        io.copy("source/path/file.yaml", "dest/path/file.yaml")
+        shutil_mock.copytree.assert_called_once()
+        shutil_mock.copy.assert_called_with("source/path/file.yaml", "dest/path/file.yaml")
 
-    io.copy(fixtures_directory_path, destination_path)
+    @patch("nestor_api.lib.io.shutil", autospec=True)
+    def test_copy_directory_with_content(self, shutil_mock):
+        io.copy("source/path/", "dest/path/")
+        shutil_mock.copytree.assert_called_once()
+        shutil_mock.copy.assert_not_called()
 
-    assert os.path.isfile(destination_path)
+    @patch("nestor_api.lib.io.shutil", autospec=True)
+    def test_copy_should_raise_if_failure(self, shutil_mock):
+        exception = OSError()
+        shutil_mock.copytree.side_effect = exception
+        with self.assertRaises(OSError) as context:
+            io.copy("source/path/", "dest/path/")
+        self.assertEqual(exception, context.exception)
+        shutil_mock.copy.assert_not_called()
 
-    os.remove(destination_path)
+    @patch("nestor_api.lib.io.get_temporary_directory_path", autospec=True)
+    @patch("nestor_api.lib.io.ensure_dir", autospec=True)
+    def test_create_temporary_directory(self, ensure_dir_mock, get_temporary_directory_path_mock):
+        get_temporary_directory_path_mock.return_value = "path/to/temporary/prefix-dir"
 
+        temporary_path = io.create_temporary_directory("prefix")
 
-def test_copy_directory_with_content():
-    fixtures_directory_path = Path(os.path.dirname(__file__), "..", "__fixtures__").resolve()
-    destination_path = Path(os.path.dirname(__file__), "..", "__fixtures__copy").resolve()
-    fixtures_files = os.listdir(fixtures_directory_path)
+        get_temporary_directory_path_mock.assert_called_with("prefix")
+        ensure_dir_mock.assert_called_with("path/to/temporary/prefix-dir")
+        self.assertEqual(temporary_path, "path/to/temporary/prefix-dir")
 
-    io.copy(fixtures_directory_path, destination_path)
+    @patch("nestor_api.lib.io.Path", autospec=True)
+    def test_ensure_dir(self, path_mock):
+        io.ensure_dir("path/to/test")
+        path_mock.return_value.mkdir.assert_called_with(parents=True, exist_ok=True)
 
-    copied_fixtures_files = os.listdir(destination_path)
-
-    assert os.path.isdir(destination_path)
-    assert fixtures_files == copied_fixtures_files
-
-    shutil.rmtree(destination_path)
-
-
-def test_copy_should_raise_if_failure():
-    with pytest.raises(Exception):
-        fixtures_directory_path = Path(os.path.dirname(__file__), "..", "__abcdefg").resolve()
-        destination_path = Path(os.path.dirname(__file__), "..", "__abcdefg_copy").resolve()
-
-        io.copy(fixtures_directory_path, destination_path)
-
-
-def test_create_temporary_directory():
-    temporary_path = io.create_temporary_directory("prefix")
-
-    assert temporary_path.startswith("/tmp/nestor/work/prefix-")
-    assert os.path.isdir(temporary_path)
-
-    shutil.rmtree(temporary_path)
-
-
-def test_ensure_dir_existing_folder():
-    # "tests" directory of the project
-    tests_directory_path = Path(os.path.dirname(__file__), "..").resolve()
-
-    io.ensure_dir(tests_directory_path)
-
-    assert os.path.isdir(tests_directory_path)
-
-
-def test_ensure_dir_not_existing_folder():
-    # "tests/ensure_dir" directory in the project
-    tests_directory_path = Path(os.path.dirname(__file__), "..", "ensure_dir").resolve()
-
-    assert not os.path.isdir(tests_directory_path)
-
-    io.ensure_dir(tests_directory_path)
-
-    assert os.path.isdir(tests_directory_path)
-
-    os.rmdir(tests_directory_path)
-
-
-def test_execute(mocker):
-    mocker.patch.object(subprocess, "run")
-
-    io.execute("a command with --arg1 arg-value")
-
-    subprocess.run.assert_called_with(
-        ["a", "command", "with", "--arg1", "arg-value"], check=True, cwd=None, stdout=-1
-    )
-
-
-def test_execute_should_raise_if_failure():
-    with pytest.raises(Exception):
+    @patch("nestor_api.lib.io.subprocess.run", autospec=True)
+    def test_execute(self, subprocess_run_mock):
         io.execute("a command with --arg1 arg-value")
 
+        subprocess_run_mock.assert_called_with(
+            ["a", "command", "with", "--arg1", "arg-value"], check=True, cwd=None, stdout=-1
+        )
 
-def test_exists_existing_file():
-    existing_path = Path(os.path.dirname(__file__), "__init__.py").resolve()
-    assert io.exists(existing_path)
+    @patch("nestor_api.lib.io.subprocess.run", autospec=True)
+    def test_execute_should_raise_if_failure(self, subprocess_run_mock):
+        exception = Exception("some exception")
+        subprocess_run_mock.side_effect = exception
+        with self.assertRaises(Exception) as context:
+            io.execute("a command with --arg1 arg-value")
+        self.assertEqual(exception, context.exception)
 
+    @patch("nestor_api.lib.io.Path", autospec=True)
+    def test_exists_existing_file(self, path_mock):
+        path_mock.return_value.exists.return_value = True
+        result = io.exists("existing/path")
+        path_mock.assert_called_once_with("existing/path")
+        path_mock.return_value.exists.assert_called_once()
+        self.assertTrue(result)
 
-def test_exists_not_existing_file():
-    existing_path = Path(os.path.dirname(__file__), "abcdefghijklmnopqrstuvwxyz.py").resolve()
-    assert not io.exists(existing_path)
+    @patch("nestor_api.lib.io.Path", autospec=True)
+    def test_exists_not_existing_file(self, path_mock):
+        path_mock.return_value.exists.return_value = False
+        result = io.exists("unexisting/path")
+        path_mock.assert_called_once_with("unexisting/path")
+        path_mock.return_value.exists.assert_called_once()
+        self.assertFalse(result)
 
+    @patch("nestor_api.lib.io.yaml", autospec=True)
+    def test_from_yaml(self, yaml_mock):
+        with patch("nestor_api.lib.io.open", mock_open(read_data="key: value")) as open_mock:
+            yaml_mock.safe_load.return_value = {"key": "value"}
 
-def test_from_yaml():
-    yaml_fixture_path = Path(
-        os.path.dirname(__file__), "..", "__fixtures__", "example.yaml"
-    ).resolve()
+            parsed_yaml = io.from_yaml("example.yml")
 
-    parsed_yaml = io.from_yaml(yaml_fixture_path)
+            open_mock.assert_called_with("example.yml", "r")
+            yaml_mock.safe_load.assert_called_once_with("key: value")
+            self.assertEqual(parsed_yaml, {"key": "value"})
 
-    assert parsed_yaml == {
-        "name": "Martin D'vloper",
-        "job": "Developer",
-        "skill": "Elite",
-        "employed": True,
-        "foods": ["Apple", "Orange", "Strawberry", "Mango"],
-        "languages": {"perl": "Elite", "python": "Elite", "pascal": "Lame"},
-    }
+    @patch("nestor_api.lib.io.Configuration", autospec=True)
+    def test_get_pristine_path(self, configuration_mock):
+        configuration_mock.get_pristine_path.return_value = "/tmp/nestor/pristine"
 
+        pristine_path = io.get_pristine_path("my_path_name")
 
-def test_get_pristine_path_default():
-    pristine_path = io.get_pristine_path("my_path_name")
-    assert pristine_path == "/tmp/nestor/pristine/my_path_name"
+        self.assertEqual(pristine_path, "/tmp/nestor/pristine/my_path_name")
 
+    @patch("nestor_api.lib.io.get_temporary_directory_path", autospec=True)
+    @patch("nestor_api.lib.io.copy", autospec=True)
+    def test_create_temporary_copy(self, copy_mock, get_temporary_directory_path_mock):
+        get_temporary_directory_path_mock.return_value = "/tmp/nestor/work/my-application-"
 
-def test_get_pristine_path_configured(mocker):
-    mocker.patch.object(Configuration, "get_pristine_path", return_value="/tmp/a_configured_path")
+        temporary_directory_path = io.create_temporary_copy("some/path", "my-application")
 
-    pristine_path = io.get_pristine_path("my_path_name")
+        get_temporary_directory_path_mock.assert_called_with("my-application")
+        copy_mock.assert_called_with("some/path", "/tmp/nestor/work/my-application-")
+        self.assertEqual(temporary_directory_path, "/tmp/nestor/work/my-application-")
 
-    assert pristine_path == "/tmp/a_configured_path/my_path_name"
+    @patch("nestor_api.lib.io.get_working_path", autospec=True)
+    def test_get_temporary_directory_path(self, get_working_path_mock):
+        get_working_path_mock.return_value = "/tmp/nestor/work/test-prefix-"
+        generated_path = io.get_temporary_directory_path("test-prefix")
 
+        tmp_directory_name = get_working_path_mock.call_args[0][0]
+        self.assertTrue(tmp_directory_name.startswith("test-prefix-"))
+        self.assertEqual(generated_path, "/tmp/nestor/work/test-prefix-")
 
-def test_create_temporary_copy():
-    fixtures_directory_path = Path(os.path.dirname(__file__), "..", "__fixtures__").resolve()
-    fixtures_files = os.listdir(fixtures_directory_path)
+    @patch("nestor_api.lib.io.Configuration", autospec=True)
+    @patch("nestor_api.lib.io.os", autospec=True)
+    def test_get_working_path(self, os_mock, configuration_mock):
+        # Mocks
+        configuration_mock.get_working_path.return_value = "/tmp/nestor/work/"
+        os_mock.path.join.return_value = "/tmp/nestor/work/my_path_name"
 
-    temporary_directory_path = io.create_temporary_copy(fixtures_directory_path, "my-application")
+        # Test
+        working_path = io.get_working_path("my_path_name")
 
-    copied_files = os.listdir(temporary_directory_path)
+        # Assertions
+        os_mock.path.join.assert_called_with("/tmp/nestor/work/", "my_path_name")
+        self.assertEqual(working_path, "/tmp/nestor/work/my_path_name")
 
-    assert temporary_directory_path.startswith("/tmp/nestor/work/my-application-")
-    assert os.path.isdir(temporary_directory_path)
-    assert fixtures_files == copied_files
+    @patch("nestor_api.lib.io.os", autospec=True)
+    @patch("nestor_api.lib.io.shutil", autospec=True)
+    def test_remove_single_file(self, shutil_mock, os_mock):
+        io.remove("path/to/remove")
+        shutil_mock.rmtree.assert_called_once_with("path/to/remove")
+        os_mock.remove.assert_not_called()
 
-    shutil.rmtree(temporary_directory_path)
+    @patch("nestor_api.lib.io.os", autospec=True)
+    @patch("nestor_api.lib.io.shutil", autospec=True)
+    def test_remove_directory_with_content(self, shutil_mock, os_mock):
+        shutil_mock.rmtree.side_effect = OSError(errno.ENOTDIR, "some reason")
+        io.remove("path/to/remove")
+        shutil_mock.rmtree.assert_called_once_with("path/to/remove")
+        os_mock.remove.assert_called_once_with("path/to/remove")
 
+    @patch("nestor_api.lib.io.os", autospec=True)
+    @patch("nestor_api.lib.io.shutil", autospec=True)
+    def test_remove_should_raise_if_failure(self, shutil_mock, os_mock):
+        exception = OSError()
+        shutil_mock.rmtree.side_effect = exception
 
-def test_get_temporary_directory_path():
-    generated_path = io.get_temporary_directory_path("test-prefix")
-
-    assert generated_path.startswith("/tmp/nestor/work/test-prefix-")
-
-
-def test_get_working_path_default():
-    pristine_path = io.get_working_path("my_path_name")
-    assert pristine_path == "/tmp/nestor/work/my_path_name"
-
-
-def test_get_working_path_configured(mocker):
-    mocker.patch.object(Configuration, "get_working_path", return_value="/tmp/a_configured_path")
-
-    pristine_path = io.get_working_path("my_path_name")
-
-    assert pristine_path == "/tmp/a_configured_path/my_path_name"
-
-
-def test_remove_single_file():
-    fixtures_directory_path = Path(
-        os.path.dirname(__file__), "..", "__fixtures__", "example.yaml"
-    ).resolve()
-    destination_path = Path(
-        os.path.dirname(__file__), "..", "__fixtures__", "example_copy.yaml"
-    ).resolve()
-
-    shutil.copyfile(fixtures_directory_path, destination_path)
-
-    assert os.path.isfile(destination_path)
-
-    io.remove(destination_path)
-
-    assert not os.path.isfile(destination_path)
-
-
-def test_remove_directory_with_content():
-    fixtures_directory_path = Path(os.path.dirname(__file__), "..", "__fixtures__").resolve()
-    destination_path = Path(os.path.dirname(__file__), "..", "__fixtures__copy").resolve()
-
-    shutil.copytree(fixtures_directory_path, destination_path)
-
-    assert os.path.isdir(destination_path)
-
-    io.remove(destination_path)
-
-    assert not os.path.isdir(destination_path)
-
-
-def test_remove_should_raise_if_failure():
-    with pytest.raises(Exception):
-        not_existing_path = Path(os.path.dirname(__file__), "..", "__abcdefg").resolve()
-
-        io.remove(not_existing_path)
+        with self.assertRaises(OSError) as context:
+            io.remove("path/to/remove")
+        self.assertEqual(exception, context.exception)
+        shutil_mock.rmtree.assert_called_once_with("path/to/remove")
+        os_mock.remove.assert_not_called()
