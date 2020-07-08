@@ -26,3 +26,23 @@ def test_get_working_path_configured(monkeypatch):
 
 def test_get_working_path_default():
     assert Configuration.get_working_path() == "/tmp/nestor/work"
+
+
+def test_get_config_app_folder_configured(monkeypatch):
+    monkeypatch.setenv("NESTOR_CONFIG_APPS_FOLDER", "/a-custom-apps-folder")
+
+    assert Configuration.get_config_app_folder() == "/a-custom-apps-folder"
+
+
+def test_get_config_app_folder_default():
+    assert Configuration.get_config_app_folder() == "apps"
+
+
+def test_get_config_project_filename_configured(monkeypatch):
+    monkeypatch.setenv("NESTOR_CONFIG_PROJECT_FILENAME", "custom-name.yaml")
+
+    assert Configuration.get_config_project_filename() == "custom-name.yaml"
+
+
+def test_get_config_project_filename_default():
+    assert Configuration.get_config_project_filename() == "project.yaml"
