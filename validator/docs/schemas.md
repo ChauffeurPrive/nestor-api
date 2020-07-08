@@ -4,11 +4,6 @@ This module contains the logic needed to validate deployment files with a define
 
 The deployment files define applications or projects.
 
-## Table of Contents
-1. [Application Configuration](#application-configuration)
-2. [Kubernetes Configuration](#kubernetes-configuration)
-
-
 ## Application Configuration
 
 In each file you will define the application that you want to deploy, few fields are required to setup a new application. There are many supported values which are optional that could be useful for your deployment. You can read more about them in the following sections and the schemas definition.
@@ -27,7 +22,14 @@ variables:                  # Environment variables
     OPE_VAR1: ope_variable_1
 ```
 
-To further customize the deployment of your application, you can add the following sections to the configuration files.
+To further customize the deployment of your application, you can add the following sections to the configuration file.
+
+## Table of Contents
+1. [Generic Configuration](#generic-configuration)
+2. [Kubernetes Configuration](#kubernetes-configuration)
+
+
+## Generic Configuration
 
 ### Processes
 
@@ -42,8 +44,8 @@ processes:
     start_command: npm start  # Command executed when the pod is started
 # Defining a scheduled process
   - name: cronjob-name
-  is_cronjob: true
-  start_command: npm run worker
+    is_cronjob: true
+    start_command: npm run worker
 ```
 
 ### Crons
@@ -58,12 +60,23 @@ crons:
               # it must be the same name as defined in processes
     concurrency_policy: 'Forbid' # Allow, Forbid or Replace concurrency of cronjobs, STRING - Required. 
     schedule: '* * * * *' # STRING - Required
-    suspend:              # BOOLEAN
-  another-resource:
-    schedule: '* * * * *'
+    suspend: false        # BOOLEAN
 ```
 
-**_Note_**: You can read more about the concurrency policies in this section of the [Kubernetes documentation](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+**_Note_**: You can read more about how to write a cron, the different concurrency policies and more features in the [official documentation](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#writing-a-cron-job-spec)
+
+### Dependencies
+
+This section can be used when your application depends or makes use of other applications. In this section you can specify the list dependencies used by your project. 
+
+```yaml
+dependencies:
+  - api-v1
+  - voice-service
+  - payment-service
+  # .. and more
+  # if your application does not have dependencies, you can omit this section
+```
 
 ## Kubernetes Configuration 
 
@@ -124,18 +137,6 @@ templateVars:         # Variables used in conf templates
   tplCanary:          # Define name for canary, STRING
 ```
 
-### Dependencies
-
-This section can be used when your application depends or makes use of other applications. In this section you can specify the list dependencies used by your project. 
-
-```yaml
-dependencies:
-  - api-v1
-  - voice-service
-  - payment-service
-  # .. and more
-  # if your application does not have dependencies, you can omit this section
-```
 
 ### Public
 Determines if the project is publicly available for other services in your kubernetes namespace, this will allow internal interaction between applications.
@@ -145,11 +146,11 @@ public: true
 ```
 
 ### Public Aliases
-In this section allows at pod-level to override the hostname resolution when DNS and other options are not applicable. This is a feature of Kubernetes, that allows to reach your application with a more friendly name.
+This section allows at pod-level to override the hostname resolution when DNS and other options are not applicable. This is a feature of Kubernetes, that allows to reach your application with a more friendly name.
 
-You can define an alias for your application to facilitate public access.
+You can define an alias for your application to ease public access.
 
-If you need further documentation of how DNS and the network layer works in Kubernets. We recommend you to read [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
+If you need further documentation about how DNS and the network layer works in Kubernetes. We recommend you to read [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
 
 ```yaml
 public_aliases:
