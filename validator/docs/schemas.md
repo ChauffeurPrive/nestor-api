@@ -6,7 +6,7 @@ The deployment files define applications or projects.
 
 ## Application Configuration
 
-In each file you will define the application that you want to deploy, few fields are required to setup a new application. There are many supported values which are optional that could be useful for your deployment. You can read more about them in the following sections and the schemas definition.
+In each file you will define the application that you want to deploy, few fields are required to setup a new application. There are many optional supported values that could be useful for your deployment. You can read more about them in the following sections and the schemas definition.
 
 #### Application Example 
 This is how a basic configuration for an application looks like, this example contains the minimum required fields.
@@ -34,7 +34,6 @@ To further customize the deployment of your application, you can add the followi
 ### Processes
 
 A project can contain multiple processes such as workers, web processes and more.
-The structure to define a process is the following one:
 
 ```yaml
 # Defining a simple process
@@ -42,7 +41,7 @@ processes:
   - name: process-name        # Process name - required - maxLength: 58
     is_cronjob: false         # Defining a simple process
     start_command: npm start  # Command executed when the pod is started
-# Defining a scheduled process
+  # Defining a scheduled process
   - name: cronjob-name
     is_cronjob: true
     start_command: npm run worker
@@ -51,8 +50,6 @@ processes:
 ### Crons
 Crons are tasks that run at a specific time or interval.
 You can use them to automate tasks, commonly as: reporting, backups, maintenance, emails and more.
-
-You can define the crons configuration with the following structure.
 
 ```yaml
 crons:
@@ -65,18 +62,6 @@ crons:
 
 **_Note_**: You can read more about how to write a cron, the different concurrency policies and more features in the [official documentation](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#writing-a-cron-job-spec)
 
-### Dependencies
-
-This section can be used when your application depends or makes use of other applications. In this section you can specify the list dependencies used by your project. 
-
-```yaml
-dependencies:
-  - api-v1
-  - voice-service
-  - payment-service
-  # .. and more
-  # if your application does not have dependencies, you can omit this section
-```
 
 ## Kubernetes Configuration 
 
@@ -102,7 +87,7 @@ This structure defines the resources to be allocated for your application.
 
 ```yaml
 resources:
-  my-resource:  # Name of the resource to define
+  web:          # Name of the process
     limit:
       cpu:      # STRING / NUMBER
       memory:   # STRING
@@ -115,9 +100,9 @@ resources:
     requests:
       cpu:      # STRING / NUMBER
       memory:   # STRING
-  another-resource: ...
 ```
 
+You can read more about how to manage the resource of your containers [here](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 
 ### TemplateVars
 
