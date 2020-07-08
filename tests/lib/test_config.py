@@ -36,6 +36,7 @@ class TestConfigLibrary(unittest.TestCase):
     @patch("nestor_api.lib.config.get_project_config", autospec=True)
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_app_config(self, configuration_mock, get_project_config_mock, io_mock):
+        # Mocks
         configuration_mock.get_config_path.return_value = "tests/__fixtures__/config"
         configuration_mock.get_config_app_folder.return_value = "apps"
         io_mock.exists.return_value = True
@@ -54,8 +55,10 @@ class TestConfigLibrary(unittest.TestCase):
             },
         }
 
+        # Test
         app_config = config.get_app_config("backoffice")
 
+        # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
         io_mock.from_yaml.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
         get_project_config_mock.assert_called_once()
@@ -89,6 +92,7 @@ class TestConfigLibrary(unittest.TestCase):
 
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config(self, configuration_mock, io_mock):
+        # Mocks
         configuration_mock.get_config_path.return_value = "tests/__fixtures__/config"
         configuration_mock.get_config_project_filename.return_value = "project.yaml"
         io_mock.exists.return_value = True
@@ -100,8 +104,10 @@ class TestConfigLibrary(unittest.TestCase):
             },
         }
 
+        # Test
         environment_config = config.get_project_config()
 
+        # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/project.yaml")
         io_mock.from_yaml.assert_called_once_with("tests/__fixtures__/config/project.yaml")
         self.assertEqual(
