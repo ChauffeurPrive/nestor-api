@@ -48,7 +48,7 @@ def get_app_config(app_name: str) -> dict:
 def get_project_config() -> dict:
     """Load the configuration of the current environment (global configuration)"""
     project_config_path = os.path.join(
-        Configuration.get_config_path(), Configuration.get_config_projet_filename()
+        Configuration.get_config_path(), Configuration.get_config_project_filename()
     )
     if not io.exists(project_config_path):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), project_config_path)
