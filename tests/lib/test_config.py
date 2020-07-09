@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
-
 import unittest
 from unittest.mock import call, patch
 
@@ -9,7 +7,6 @@ import nestor_api.lib.config as config
 
 
 @patch("nestor_api.lib.config.io", autospec=True)
-# pylint: disable=no-self-use
 class TestConfigLibrary(unittest.TestCase):
     def test_change_environment(self, io_mock):
         config.change_environment("environment", "path/to/config")
@@ -131,7 +128,6 @@ class TestConfigLibrary(unittest.TestCase):
 
     # pylint: disable=unused-argument
     def test_resolve_variables_deep(self, io_mock):
-        # pylint: disable=protected-access
         result = config._resolve_variables_deep(
             {
                 "A": "value_a",
@@ -182,7 +178,6 @@ class TestConfigLibrary(unittest.TestCase):
     # pylint: disable=unused-argument
     def test_resolve_variables_deep_with_invalid_reference(self, io_mock):
         with self.assertRaises(AggregatedConfigurationError) as context:
-            # pylint: disable=protected-access
             config._resolve_variables_deep(
                 {
                     "error": {},

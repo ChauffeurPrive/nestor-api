@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
-
 import os
 from unittest import TestCase
 from unittest.mock import patch

@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring disable=missing-module-docstring
-
 import nestor_api.utils.dict as dict_utils
 
 

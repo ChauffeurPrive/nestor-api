@@ -15,7 +15,8 @@ format:
 lint:
 	isort -rc -c nestor_api tests ./**.py
 	black --check --line-length 100 nestor_api tests ./**.py
-	pylint nestor_api tests ./**.py
+	pylint tests --rcfile=tests/.pylintrc
+	pylint nestor_api ./**.py --rcfile=nestor_api/.pylintrc
 
 mypy:
 	mypy nestor_api tests

@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring disable=missing-module-docstring
-
 import subprocess
 from unittest.mock import call
 
