@@ -9,17 +9,18 @@ help:
 	@echo "vulncheck - Check for packages vulnerabilities with pipenv"
 
 format:
-	isort -rc --apply nestor_api tests ./**.py
-	black --line-length 100 nestor_api tests ./**.py
+	isort -rc --apply nestor_api tests validator ./**.py
+	black --line-length 100 nestor_api tests validator ./**.py
 
 lint:
-	isort -rc -c nestor_api tests ./**.py
-	black --check --line-length 100 nestor_api tests ./**.py
+	isort -rc -c nestor_api tests validator ./**.py
+	black --check --line-length 100 nestor_api tests validator ./**.py
 	pylint tests --rcfile=tests/.pylintrc
 	pylint nestor_api ./**.py --rcfile=nestor_api/.pylintrc
+	pylint validator ./**.py --rcfile=nestor_api/.pylintrc
 
 mypy:
-	mypy nestor_api tests
+	mypy nestor_api tests validator
 
 pytest:
 	pytest

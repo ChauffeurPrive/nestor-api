@@ -1,0 +1,11 @@
+app: app_test
+is_enabled: true
+git:
+  origin: git@github.com:your_company/app_test.git
+teams:
+  - platform
+variables:
+  app: {}
+  ope:
+    test_date: '2020-07-02'
+    test_datetime: '2020-07-02T10:13:00.000Z'
