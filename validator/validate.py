@@ -11,6 +11,18 @@ from validator.errors.errors import InvalidTargetPathError
 from validator.schemas.schema import SCHEMAS
 
 
+def is_yaml_file(file_name):
+    """Verifies if a file ends in a valid yaml extension
+
+    Args:
+        file_name (string): The file name
+
+    Returns:
+        boolean: Whether it ends in the supported yaml extensions
+    """
+    return file_name.endswith((".yaml", ".yml"))
+
+
 def build_apps_path():
     """Builds the path for /apps folder"""
     target_path = Configuration.get_target_path()
@@ -70,7 +82,7 @@ def validate_deployment_files():
             for f in os.listdir(apps_path)
             if os.path.isfile(os.path.join(apps_path, f))
             and not f.startswith(".")
-            and (f.endswith(".yaml") or f.endswith(".yml"))
+            and is_yaml_file(f)
         ]
 
         for file in files_in_dir:

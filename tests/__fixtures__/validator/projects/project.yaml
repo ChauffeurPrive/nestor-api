@@ -1,11 +1,11 @@
-processes:
-  - name: web
-    start_command: npm run start
-    is_cronjob: false
 app: my-app
 git:
   origin: 'git@github.com:my-company/my-app.git'
 is_enabled: true
+processes:
+  - name: web
+    start_command: npm run start
+    is_cronjob: false
 docker:
   build:
     variables:

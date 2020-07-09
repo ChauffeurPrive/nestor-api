@@ -12,6 +12,12 @@ from validator.errors.errors import InvalidTargetPathError
 import validator.validate as config_validator
 
 
+def test_is_yaml_file():
+    assert not config_validator.is_yaml_file("invalid_name")
+    assert config_validator.is_yaml_file("filename.yaml")
+    assert config_validator.is_yaml_file("filename.yml")
+
+
 def test_build_apps_path_with_env(monkeypatch):
     monkeypatch.setenv("NESTOR_CONFIG_PATH", "/some/target/path")
     app_path = config_validator.build_apps_path()
@@ -82,7 +88,10 @@ def test_validate_applications(mocker):
     ).resolve()
     mocker.patch.object(config_validator, "build_apps_path", return_value=real_config_fixture_path)
     mocker.patch.object(Configuration, "get_validation_target", return_value="APPLICATIONS")
-    config_validator.validate_deployment_files()
+    try:
+        config_validator.validate_deployment_files()
+    except Exception as err:  # pylint: disable=broad-except
+        pytest.fail(f"validate_deployment_files() raised an unexpected Exception {err}")
 
 
 def test_validate_projects(mocker):
@@ -94,4 +103,7 @@ def test_validate_projects(mocker):
         config_validator, "build_project_conf_path", return_value=real_config_fixture_path
     )
     mocker.patch.object(Configuration, "get_validation_target", return_value="PROJECTS")
-    config_validator.validate_deployment_files()
+    try:
+        config_validator.validate_deployment_files()
+    except Exception as err:  # pylint: disable=broad-except
+        pytest.fail(f"validate_deployment_files() raised an unexpected Exception {err}")
