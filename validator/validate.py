@@ -54,7 +54,6 @@ def validate_deployment_files():
         Exception: If the configuration path does not exist
     """
     apps_path = build_apps_path()
-
     if not Path(apps_path).exists():
         raise NotADirectoryError(
             f"{apps_path} does not look like a valid configuration path. Verify the path exists"
@@ -64,12 +63,19 @@ def validate_deployment_files():
 
     if validation_target == str(SupportedValidations.APPLICATIONS):
         # Validate each application file
+
+        # We will only validate .yaml or .yml files
         files_in_dir = [
-            f for f in os.listdir(apps_path) if os.path.isfile(f) and not f.startswith(".")
+            f.lower()
+            for f in os.listdir(apps_path)
+            if os.path.isfile(os.path.join(apps_path, f))
+            and not f.startswith(".")
+            and (f.endswith(".yaml") or f.endswith(".yml"))
         ]
+
         for file in files_in_dir:
-            application_conf_file_path = os.path.join(apps_path, file)
-            validate_file(application_conf_file_path, SCHEMAS[validation_target])
+            application_config_file_path = os.path.join(apps_path, file)
+            validate_file(application_config_file_path, SCHEMAS[validation_target])
 
     elif validation_target == str(SupportedValidations.PROJECTS):
         # Validate project.yaml

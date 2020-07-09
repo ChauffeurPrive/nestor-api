@@ -100,6 +100,6 @@ APPLICATION_SCHEMA = {
             "additionalProperties": False,
         },
     },
-    "required": ["app", "variables", "git", "is_enabled", "teams"],
+    "required": ["app", "variables", "git", "is_enabled"],
     "additionalProperties": True,
 }

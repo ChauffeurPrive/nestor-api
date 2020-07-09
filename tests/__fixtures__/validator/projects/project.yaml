@@ -1,0 +1,42 @@
+processes:
+  - name: web
+    start_command: npm run start
+    is_cronjob: false
+app: my-app
+git:
+  origin: 'git@github.com:my-company/my-app.git'
+is_enabled: true
+docker:
+  build:
+    variables:
+      SOME_DOCKER_ENV: '12345'
+  registries:
+    docker.com: 
+      - id: 'some id'
+        organization: 'my organization'
+probes:
+  web:
+    liveness:
+      delay: 10
+      path: /heartbeat
+      timeout: 30
+resources:
+  web:
+    limits:
+      cpu: 0.7
+      memory: 1024Mi
+    requests:
+      cpu: 0.1
+      memory: 350Mi
+scales:
+  web:
+    maxReplicas: 10
+    minReplicas: 5
+    targetCPUUtilizationPercentage: 75
+templateVars:
+  tplCriticity: high
+variables:
+  app:
+    SOME_FEATURE_FLAG: 'false'
+  ope:
+    SOME_CERTIFICATE: ABCgM2123xWQmH567

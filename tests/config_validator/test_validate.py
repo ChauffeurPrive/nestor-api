@@ -76,10 +76,22 @@ def test_validate_error_validation_target(mocker):
         config_validator.validate_deployment_files()
 
 
-def test_validate(mocker):
+def test_validate_applications(mocker):
     real_config_fixture_path = Path(
-        os.path.dirname(__file__), "..", "__fixtures__", "validator"
+        os.path.dirname(__file__), "..", "__fixtures__", "validator", "apps"
     ).resolve()
     mocker.patch.object(config_validator, "build_apps_path", return_value=real_config_fixture_path)
     mocker.patch.object(Configuration, "get_validation_target", return_value="APPLICATIONS")
+    config_validator.validate_deployment_files()
+
+
+def test_validate_projects(mocker):
+    real_config_fixture_path = Path(
+        os.path.dirname(__file__), "..", "__fixtures__", "validator", "projects", "project.yaml"
+    ).resolve()
+    mocker.patch.object(config_validator, "build_apps_path", return_value=real_config_fixture_path)
+    mocker.patch.object(
+        config_validator, "build_project_conf_path", return_value=real_config_fixture_path
+    )
+    mocker.patch.object(Configuration, "get_validation_target", return_value="PROJECTS")
     config_validator.validate_deployment_files()

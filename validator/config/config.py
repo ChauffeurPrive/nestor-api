@@ -30,3 +30,4 @@ class SupportedValidations(Enum):
 
     APPLICATIONS = "APPLICATIONS"
     PROJECTS = "PROJECTS"
+    ALLOWED_YAML_EXTENSIONS = [".yaml", ".yml"]

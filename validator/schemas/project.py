@@ -72,17 +72,6 @@ PROJECT_SCHEMA = {
             "additionalProperties": False,
         },
     },
-    "required": [
-        "project",
-        "env",
-        "domain",
-        "env_suffix",
-        "domain_prefix",
-        "docker",
-        "deployments",
-        "probes",
-        "variables",
-        "workflow",
-    ],
+    "required": ["docker", "probes", "variables",],
     "additionalProperties": True,
 }

@@ -74,18 +74,13 @@ SPECS = {
             "": {
                 "type": "object",
                 "properties": {
-                    "limit": {"$ref": "#/definitions/resources/definitions/resourcesSubProperty",},
                     "limits": {"$ref": "#/definitions/resources/definitions/resourcesSubProperty",},
-                    "request": {
-                        "$ref": "#/definitions/resources/definitions/resourcesSubProperty",
-                    },
                     "requests": {
                         "$ref": "#/definitions/resources/definitions/resourcesSubProperty",
                     },
                 },
             },
         },
-        "additionalProperties": False,
         "definitions": {
             "resourcesSubProperty": {
                 "type": "object",
