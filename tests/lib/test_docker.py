@@ -58,7 +58,7 @@ class TestDockerLib(TestCase):
     @patch("nestor_api.lib.docker.git", autospec=True)
     @patch("nestor_api.lib.docker.config", autospec=True)
     @patch("nestor_api.lib.docker.io", autospec=True)
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments disable=bad-continuation
     def test_build_failure(
         self, io_mock, config_mock, git_mock, has_docker_image_mock, logger_mock
     ):
