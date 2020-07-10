@@ -81,15 +81,16 @@ class TestConfigLibrary(unittest.TestCase):
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_app_config_when_not_found(self, configuration_mock, io_mock):
         io_mock.exists.return_value = False
-        configuration_mock.get_config_path.return_value = ""
-        configuration_mock.get_config_app_folder.return_value = ""
+        configuration_mock.get_config_app_folder.return_value = "apps"
 
-        self.assertRaises(AppConfigurationNotFoundError, config.get_app_config, "app_not_here")
+        with self.assertRaises(AppConfigurationNotFoundError) as context:
+            config.get_app_config("some-app", "/some/path")
+
+        self.assertEqual("Configuration file not found for app: some-app", str(context.exception))
 
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config(self, configuration_mock, io_mock):
         # Mocks
-        configuration_mock.get_config_path.return_value = "tests/__fixtures__/config"
         configuration_mock.get_config_project_filename.return_value = "project.yaml"
         io_mock.exists.return_value = True
         io_mock.from_yaml.return_value = {
@@ -120,10 +121,14 @@ class TestConfigLibrary(unittest.TestCase):
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config_when_not_found(self, configuration_mock, io_mock):
         io_mock.exists.return_value = False
-        configuration_mock.get_config_path.return_value = ""
-        configuration_mock.get_config_project_filename.return_value = ""
+        configuration_mock.get_config_project_filename.return_value = "project.yaml"
 
-        self.assertRaises(FileNotFoundError, config.get_project_config)
+        with self.assertRaises(FileNotFoundError) as context:
+            config.get_project_config("/some/path")
+
+        self.assertEqual(
+            "[Errno 2] No such file or directory: '/some/path/project.yaml'", str(context.exception)
+        )
 
     @patch.dict("nestor_api.lib.config.os.environ", {"VALUE_IN_ENV": "value_in_env"})
     def test_resolve_variables_deep(self, _io_mock):
