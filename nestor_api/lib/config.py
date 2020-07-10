@@ -71,6 +71,7 @@ def _resolve_variable(template: str, variables: dict, path: str) -> str:
                     )
 
                 final_value = re.sub(f"{{{{{var_name}}}}}", var_value, final_value)
+        return final_value
 
     # Resolve pattern '$ENV_VAR'
     env_variables = re.findall(r"^\$(\w+)$", template)
@@ -78,6 +79,7 @@ def _resolve_variable(template: str, variables: dict, path: str) -> str:
         env_var = os.environ.get(env_variables[0])
         if env_var is not None:
             final_value = env_var
+        return final_value
 
     # Awaiting for implementation
     # -> Resolve vault definitions "!vault:xxx"

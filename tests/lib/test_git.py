@@ -48,7 +48,7 @@ class TestGitLibrary:
         assert repository_dir == "/fixtures-nestor-work/my-app-11111111111111"
 
     def test_get_last_commit_hash(self, io_mock):
-        io_mock.execute.return_value = "1ab2c3d\n"
+        io_mock.execute.return_value = "1ab2c3d"
 
         last_commit_hash = git.get_last_commit_hash("/path_to/a_git_repository")
 
@@ -58,7 +58,7 @@ class TestGitLibrary:
         )
 
     def test_get_last_tag(self, io_mock):
-        io_mock.execute.return_value = "1.0.0-sha-a2b3c4\n"
+        io_mock.execute.return_value = "1.0.0-sha-a2b3c4"
 
         last_tag = git.get_last_tag("/path_to/a_git_repository")
 
@@ -68,7 +68,7 @@ class TestGitLibrary:
         )
 
     def test_get_commit_hash_from_tag(self, io_mock):
-        io_mock.execute.return_value = "a2b3c4d5e6f7g8h9\n"
+        io_mock.execute.return_value = "a2b3c4d5e6f7g8h9"
 
         commit_hash = git.get_commit_hash_from_tag("/path_to/a_git_repository", "1.0.0-sha-a2b3c4")
 
@@ -78,7 +78,7 @@ class TestGitLibrary:
         )
 
     def test_get_remote_url_with_default_remote_name(self, io_mock):
-        io_mock.execute.return_value = "git@github.com:org/repo.git\n"
+        io_mock.execute.return_value = "git@github.com:org/repo.git"
 
         remote_url = git.get_remote_url("/path_to/a_git_repository")
 
@@ -88,7 +88,7 @@ class TestGitLibrary:
         )
 
     def test_get_remote_url_with_remote_name(self, io_mock):
-        io_mock.execute.return_value = "git@github.com:org/repo.git\n"
+        io_mock.execute.return_value = "git@github.com:org/repo.git"
 
         remote_url = git.get_remote_url("/path_to/a_git_repository", "custom_remote_name")
 

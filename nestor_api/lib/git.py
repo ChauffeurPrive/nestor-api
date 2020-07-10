@@ -33,22 +33,22 @@ def create_working_repository(app_name: str, git_url: str) -> str:
 
 def get_last_tag(repository_dir: str) -> str:
     """Retrieves the last tag of a repository (locally)"""
-    return io.execute("git describe --always --abbrev=0", repository_dir).rstrip()
+    return io.execute("git describe --always --abbrev=0", repository_dir)
 
 
 def get_remote_url(repository_dir: str, remote_name: str = "origin") -> str:
     """Retrieves the remote url of a repository"""
-    return io.execute(f"git remote get-url {remote_name}", repository_dir).rstrip()
+    return io.execute(f"git remote get-url {remote_name}", repository_dir)
 
 
 def get_last_commit_hash(repository_dir: str) -> str:
     """Retrieves the last commit hash of a repository (locally)"""
-    return io.execute("git rev-parse --short HEAD", repository_dir).rstrip()
+    return io.execute("git rev-parse --short HEAD", repository_dir)
 
 
 def get_commit_hash_from_tag(repository_dir: str, tag_name: str) -> str:
     """Returns the commit hash associated to the given tag"""
-    return io.execute(f"git rev-list -1 {tag_name}", repository_dir).rstrip()
+    return io.execute(f"git rev-list -1 {tag_name}", repository_dir)
 
 
 def push(repository_dir: str, branch_name: str = "HEAD") -> None:

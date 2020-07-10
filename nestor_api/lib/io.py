@@ -44,7 +44,7 @@ def execute(command: str, cwd=None):
     result = subprocess.run(
         command.split(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True, cwd=cwd,
     )
-    return result.stdout.decode("utf-8")
+    return result.stdout.decode("utf-8").rstrip()
 
 
 def exists(file_path):

@@ -47,8 +47,11 @@ class TestIoLib(TestCase):
 
     @patch("nestor_api.lib.io.subprocess.run", autospec=True)
     def test_execute(self, subprocess_run_mock):
-        io.execute("a command with --arg1 arg-value")
+        subprocess_run_mock.return_value.stdout.decode.return_value = "some output\n"
 
+        output = io.execute("a command with --arg1 arg-value")
+
+        self.assertEqual(output, "some output")
         subprocess_run_mock.assert_called_with(
             ["a", "command", "with", "--arg1", "arg-value"],
             check=True,
