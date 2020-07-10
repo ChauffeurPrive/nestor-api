@@ -1,4 +1,5 @@
 import errno
+import subprocess
 from unittest import TestCase
 from unittest.mock import mock_open, patch
 
@@ -49,7 +50,11 @@ class TestIoLib(TestCase):
         io.execute("a command with --arg1 arg-value")
 
         subprocess_run_mock.assert_called_with(
-            ["a", "command", "with", "--arg1", "arg-value"], check=True, cwd=None, stdout=-1
+            ["a", "command", "with", "--arg1", "arg-value"],
+            check=True,
+            cwd=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
 
     @patch("nestor_api.lib.io.subprocess.run", autospec=True)

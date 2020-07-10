@@ -41,7 +41,9 @@ def ensure_dir(directory_path):
 
 def execute(command: str, cwd=None):
     """Executes a command and returns the stdout from it"""
-    result = subprocess.run(command.split(), stdout=subprocess.PIPE, check=True, cwd=cwd)
+    result = subprocess.run(
+        command.split(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True, cwd=cwd,
+    )
     return result.stdout.decode("utf-8")
 
 
