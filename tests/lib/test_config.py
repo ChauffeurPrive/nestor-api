@@ -34,7 +34,6 @@ class TestConfigLibrary(unittest.TestCase):
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_app_config(self, configuration_mock, get_project_config_mock, io_mock):
         # Mocks
-        configuration_mock.get_config_path.return_value = "tests/__fixtures__/config"
         configuration_mock.get_config_app_folder.return_value = "apps"
         io_mock.exists.return_value = True
         io_mock.from_yaml.return_value = {
@@ -53,7 +52,7 @@ class TestConfigLibrary(unittest.TestCase):
         }
 
         # Test
-        app_config = config.get_app_config("backoffice")
+        app_config = config.get_app_config("backoffice", "tests/__fixtures__/config")
 
         # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
@@ -102,7 +101,7 @@ class TestConfigLibrary(unittest.TestCase):
         }
 
         # Test
-        environment_config = config.get_project_config()
+        environment_config = config.get_project_config("tests/__fixtures__/config")
 
         # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/project.yaml")
@@ -126,8 +125,8 @@ class TestConfigLibrary(unittest.TestCase):
 
         self.assertRaises(FileNotFoundError, config.get_project_config)
 
-    # pylint: disable=unused-argument
-    def test_resolve_variables_deep(self, io_mock):
+    @patch.dict("nestor_api.lib.config.os.environ", {"VALUE_IN_ENV": "value_in_env"})
+    def test_resolve_variables_deep(self, _io_mock):
         result = config._resolve_variables_deep(
             {
                 "A": "value_a",
@@ -148,6 +147,8 @@ class TestConfigLibrary(unittest.TestCase):
                 "E": [{"E1": {"E11": "deep__{{A}}__"}}],
                 "F": 42,
                 "key-with.special_characters": "amazing-value",
+                "env_var": "$VALUE_IN_ENV",
+                "env_var_missing": "$VALUE_NOT_IN_ENV",
             }
         )
 
@@ -172,11 +173,12 @@ class TestConfigLibrary(unittest.TestCase):
                 "E": [{"E1": {"E11": "deep__value_a__"}}],
                 "F": 42,
                 "key-with.special_characters": "amazing-value",
+                "env_var": "value_in_env",
+                "env_var_missing": "$VALUE_NOT_IN_ENV",
             },
         )
 
-    # pylint: disable=unused-argument
-    def test_resolve_variables_deep_with_invalid_reference(self, io_mock):
+    def test_resolve_variables_deep_with_invalid_reference(self, _io_mock):
         with self.assertRaises(AggregatedConfigurationError) as context:
             config._resolve_variables_deep(
                 {
