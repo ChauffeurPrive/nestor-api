@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """Schemas managed by Nestor"""
 
 SPECS = {

@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
-
 from unittest import TestCase
 
 import nestor_api.utils.dict as dict_utils

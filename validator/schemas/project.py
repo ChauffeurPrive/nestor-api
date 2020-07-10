@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """The project schema managed by Nestor"""
 
 PROJECT_SCHEMA = {
