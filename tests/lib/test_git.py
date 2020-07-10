@@ -33,22 +33,22 @@ class TestGitLibrary:
         )
 
     @patch("nestor_api.lib.git.update_pristine_repository", autospec=True)
-    @patch("nestor_api.lib.git.config", autospec=True)
-    def test_create_working_repository(self, config_mock, update_pristine_repository_mock, io_mock):
-        config_mock.get_app_config.return_value = {}
+    def test_create_working_repository(self, update_pristine_repository_mock, io_mock):
         update_pristine_repository_mock.return_value = "/fixtures-nestor-pristine/my-app"
         io_mock.create_temporary_copy.return_value = "/fixtures-nestor-work/my-app-11111111111111"
 
-        repository_dir = git.create_working_repository("my-app")
+        repository_dir = git.create_working_repository("my-app", "git@github.com:org/repo.git")
 
-        update_pristine_repository_mock.assert_called_once_with("my-app")
+        update_pristine_repository_mock.assert_called_once_with(
+            "my-app", "git@github.com:org/repo.git"
+        )
         io_mock.create_temporary_copy.assert_called_once_with(
             "/fixtures-nestor-pristine/my-app", "my-app"
         )
         assert repository_dir == "/fixtures-nestor-work/my-app-11111111111111"
 
     def test_get_last_commit_hash(self, io_mock):
-        io_mock.execute.return_value = "1ab2c3d"
+        io_mock.execute.return_value = "1ab2c3d\n"
 
         last_commit_hash = git.get_last_commit_hash("/path_to/a_git_repository")
 
@@ -58,7 +58,7 @@ class TestGitLibrary:
         )
 
     def test_get_last_tag(self, io_mock):
-        io_mock.execute.return_value = "1.0.0-sha-a2b3c4"
+        io_mock.execute.return_value = "1.0.0-sha-a2b3c4\n"
 
         last_tag = git.get_last_tag("/path_to/a_git_repository")
 
@@ -67,8 +67,18 @@ class TestGitLibrary:
             "git describe --always --abbrev=0", "/path_to/a_git_repository"
         )
 
+    def test_get_commit_hash_from_tag(self, io_mock):
+        io_mock.execute.return_value = "a2b3c4d5e6f7g8h9\n"
+
+        commit_hash = git.get_commit_hash_from_tag("/path_to/a_git_repository", "1.0.0-sha-a2b3c4")
+
+        assert commit_hash == "a2b3c4d5e6f7g8h9"
+        io_mock.execute.assert_called_once_with(
+            "git rev-list -1 1.0.0-sha-a2b3c4", "/path_to/a_git_repository"
+        )
+
     def test_get_remote_url_with_default_remote_name(self, io_mock):
-        io_mock.execute.return_value = "git@github.com:org/repo.git"
+        io_mock.execute.return_value = "git@github.com:org/repo.git\n"
 
         remote_url = git.get_remote_url("/path_to/a_git_repository")
 
@@ -78,7 +88,7 @@ class TestGitLibrary:
         )
 
     def test_get_remote_url_with_remote_name(self, io_mock):
-        io_mock.execute.return_value = "git@github.com:org/repo.git"
+        io_mock.execute.return_value = "git@github.com:org/repo.git\n"
 
         remote_url = git.get_remote_url("/path_to/a_git_repository", "custom_remote_name")
 
@@ -88,46 +98,36 @@ class TestGitLibrary:
         )
 
     def test_push(self, io_mock):
-        io_mock.execute.return_value = "git@github.com:org/repo.git"
-
         git.push("/path_to/a_git_repository", "feature/branch")
 
         io_mock.execute.assert_called_once_with(
             "git push origin feature/branch --tags --follow-tags", "/path_to/a_git_repository",
         )
 
-    @patch("nestor_api.lib.git.config", autospec=True)
-    def test_tag(self, config_mock, io_mock):
-        config_mock.get_app_config.return_value = {"workflow": ["master", "staging", "production"]}
-        io_mock.execute.side_effect = ["", "", "1ab2c3d", ""]
+    @patch("nestor_api.lib.git.get_last_commit_hash", autospec=True)
+    def test_tag(self, get_last_commit_hash_mock, io_mock):
+        get_last_commit_hash_mock.return_value = "1ab2c3d"
 
-        tag = git.tag("/path_to/a_git_repository", "my-app", "1.0.0")
+        tag = git.tag("/path_to/a_git_repository", "1.0.0")
 
-        config_mock.get_app_config.assert_called_once_with("my-app")
-        assert io_mock.execute.call_count == 4
-        assert io_mock.execute.mock_calls[3] == call(
-            "git tag -a 1.0.0-sha-1ab2c3d 1ab2c3d", "/path_to/a_git_repository"
+        io_mock.execute.assert_called_once_with(
+            "git tag -a 1.0.0-sha-1ab2c3d 1ab2c3d -m Nestor auto-tag", "/path_to/a_git_repository"
         )
         assert tag == "1.0.0-sha-1ab2c3d"
 
-    @patch("nestor_api.lib.git.config", autospec=True)
-    def test_tag_with_invalid_version(self, config_mock, io_mock):
-        config_mock.get_app_config.return_value = {"workflow": ["master", "staging", "production"]}
-        io_mock.execute.side_effect = ["", "", "1ab2c3d", ""]
+    @patch("nestor_api.lib.git.get_last_commit_hash", autospec=True)
+    def test_tag_with_invalid_version(self, get_last_commit_hash_mock, _io_mock):
+        get_last_commit_hash_mock.return_value = "1ab2c3d"
 
         with pytest.raises(RuntimeError):
             git.tag("/path_to/a_git_repository", "my-app", "1.0")
 
     @patch("nestor_api.lib.git.update_repository", autospec=True)
-    @patch("nestor_api.lib.git.config", autospec=True)
-    def test_update_pristine_repository(self, config_mock, update_repository_mock, io_mock):
-        config_mock.get_app_config.return_value = {"git": {"origin": "git@github.com:org/repo.git"}}
-        update_repository_mock.return_value = ""
+    def test_update_pristine_repository(self, update_repository_mock, io_mock):
         io_mock.get_pristine_path.return_value = "/fixtures-nestor-pristine/my-app"
 
-        repository_dir = git.update_pristine_repository("my-app")
+        repository_dir = git.update_pristine_repository("my-app", "git@github.com:org/repo.git")
 
-        config_mock.get_app_config.assert_called_once_with("my-app")
         update_repository_mock.assert_called_once_with(
             "/fixtures-nestor-pristine/my-app", "git@github.com:org/repo.git"
         )
