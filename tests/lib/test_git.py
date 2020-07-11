@@ -1,13 +1,12 @@
 import subprocess
+import unittest
 from unittest.mock import call, patch
-
-import pytest
 
 import nestor_api.lib.git as git
 
 
 @patch("nestor_api.lib.git.io", autospec=True)
-class TestGitLibrary:
+class TestGitLibrary(unittest.TestCase):
     def test_branch_existing(self, io_mock):
         io_mock.execute.side_effect = ["* feature/branch remotes/origin/feature/branch", ""]
 
@@ -115,7 +114,7 @@ class TestGitLibrary:
         config_mock.get_app_config.return_value = {"workflow": ["master", "staging", "production"]}
         io_mock.execute.side_effect = ["", "", "1ab2c3d", ""]
 
-        with pytest.raises(RuntimeError):
+        with self.assertRaises(RuntimeError):
             git.tag("/path_to/a_git_repository", "my-app", "1.0")
 
     @patch("nestor_api.lib.git.update_repository", autospec=True)
