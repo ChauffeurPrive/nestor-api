@@ -9,6 +9,7 @@ pylint = "==2.5.0"
 black = "==19.10b0"
 isort = "==4.3.21"
 mypy = "==0.770"
+coverage = "==5.2"
 
 [packages]
 flask = "==1.1.2"
