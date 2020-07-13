@@ -48,7 +48,6 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
-cov-reports/
 
 # Translations
 *.mo

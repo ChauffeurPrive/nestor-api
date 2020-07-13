@@ -23,7 +23,13 @@ mypy:
 	mypy nestor_api tests validator
 
 test:
-	python -m unittest discover tests
+	coverage run -m unittest discover
+
+coverage:
+	coverage html --rcfile=.coveragerc
+
+coverage-xml:
+	coverage xml --rcfile=.coveragerc
 
 test-all: lint mypy test
 

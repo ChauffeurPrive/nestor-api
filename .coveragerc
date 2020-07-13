@@ -1,0 +1,9 @@
+[run]
+source=nestor_api/
+
+[report]
+include =
+    nestor_api/*
+
+[html]
+directory = htmlcov
