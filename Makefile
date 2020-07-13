@@ -1,10 +1,10 @@
-.PHONY: help format lint mypy pytest test-all vulncheck
+.PHONY: help format lint mypy unittest test-all vulncheck
 
 help:
 	@echo "format    - Format python code with isort and black"
 	@echo "lint      - Check style with pylint"
 	@echo "mypy      - Run the static type checker"
-	@echo "pytest    - Run tests suite with pytest"
+	@echo "unittest  - Run tests suite with unittest"
 	@echo "test-all  - Run lint, and test coverage"
 	@echo "vulncheck - Check for packages vulnerabilities with pipenv"
 
@@ -22,10 +22,10 @@ lint:
 mypy:
 	mypy nestor_api tests validator
 
-pytest:
-	pytest
+unittest:
+	python -m unittest discover
 
-test-all: lint mypy pytest
+test-all: lint mypy unittest
 
 vulncheck:
 	pipenv check

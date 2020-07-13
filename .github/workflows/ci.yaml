@@ -26,7 +26,7 @@ jobs:
     - name: Type checking
       run: pipenv run make mypy
     - name: Tests
-      run: pipenv run make pytest
+      run: pipenv run make unittest
     - name: Coverage check
       uses: codecov/codecov-action@v1
       with:

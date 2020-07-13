@@ -48,7 +48,6 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
-.pytest_cache/
 cov-reports/
 
 # Translations
