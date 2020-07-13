@@ -26,11 +26,11 @@ jobs:
     - name: Type checking
       run: pipenv run make mypy
     - name: Tests
-      run: pipenv run make unittest
+      run: pipenv run make test
     - name: Coverage check
       uses: codecov/codecov-action@v1
       with:
         file: ./cov-reports/coverage.xml
-        flags: unittests
+        flags: test
         name: codecov-upload
         fail_ci_if_error: true
