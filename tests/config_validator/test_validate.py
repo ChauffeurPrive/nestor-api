@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring,bad-continuation
+# pylint: disable=bad-continuation
 
 import os
 from pathlib import Path
@@ -14,14 +14,14 @@ import validator.validate as config_validator
 
 class TestValidateLibrary(unittest.TestCase):
     def test_is_yaml_file(self):
-        assert not config_validator.is_yaml_file("invalid_name")
-        assert config_validator.is_yaml_file("filename.yaml")
-        assert config_validator.is_yaml_file("filename.yml")
+        self.assertFalse(config_validator.is_yaml_file("invalid_name"))
+        self.assertTrue(config_validator.is_yaml_file("filename.yaml"))
+        self.assertTrue(config_validator.is_yaml_file("filename.yml"))
 
     @patch.dict(os.environ, {"NESTOR_CONFIG_PATH": "/some/target/path"})
     def test_build_apps_path_with_env(self):
         app_path = config_validator.build_apps_path()
-        assert app_path == "/some/target/path/apps"
+        self.assertEqual(app_path, "/some/target/path/apps")
 
     @patch("validator.config.config.Configuration.get_target_path")
     def test_build_apps_path_not_set(self, get_target_path_mock):
@@ -32,7 +32,7 @@ class TestValidateLibrary(unittest.TestCase):
     @patch.dict(os.environ, {"NESTOR_CONFIG_PATH": "/some/target/path"})
     def test_build_project_conf_path_with_env(self):
         project_conf_path = config_validator.build_project_conf_path()
-        assert project_conf_path == "/some/target/path/project.yaml"
+        self.assertEqual(project_conf_path, "/some/target/path/project.yaml")
 
     @patch("validator.config.config.Configuration.get_target_path")
     def test_build_project_conf_path_not_set(self, get_target_path_mock):
@@ -48,7 +48,7 @@ class TestValidateLibrary(unittest.TestCase):
         # Validate an exception is not raised on valid schemas
         try:
             result = config_validator.validate_file(yaml_fixture_path, EXAMPLE_SCHEMA)
-            assert result is None
+            self.assertIsNone(result)
         except ValidationError as error:
             self.fail(f"It should have not raised an exception on a valid file ${error}")
 
@@ -99,7 +99,7 @@ class TestValidateLibrary(unittest.TestCase):
     @patch("validator.validate.build_apps_path")
     @patch("validator.config.config.Configuration.get_validation_target")
     def test_validate_projects(
-        self, get_validation_target_mock, build_apps_path_mock, build_project_conf_path_mock
+        self, get_validation_target_mock, build_apps_path_mock, build_project_conf_path_mock,
     ):
         real_config_fixture_path = Path(
             os.path.dirname(__file__), "..", "__fixtures__", "validator", "projects", "project.yaml"
