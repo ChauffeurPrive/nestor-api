@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring
-
 import os
 from pathlib import Path
 
@@ -66,7 +64,9 @@ def test_validate_invalid_file():
 
 def test_validate_error_apps_dir_not_exists(mocker):
     mocker.patch.object(config_validator, "build_apps_path", return_value="some/target/path")
-    expected_message = "some/target/path does not look like a valid configuration path. Verify the path exists"  # pylint: disable=line-too-long
+    expected_message = (
+        "some/target/path does not look like a valid configuration path. Verify the path exists"
+    )
     with pytest.raises(Exception, match=expected_message):
         config_validator.validate_deployment_files()
 
@@ -75,9 +75,11 @@ def test_validate_error_validation_target(mocker):
     fixtures_path = Path(os.path.dirname(__file__), "..", "__fixtures__").resolve()
     mocker.patch.object(config_validator, "build_apps_path", return_value=fixtures_path)
     mocker.patch.object(Configuration, "get_validation_target", return_value="SOME_VALUE")
+    # pylint: disable=bad-continuation
     with pytest.raises(
-        Exception,  # pylint: disable=bad-continuation
-        match="There is no configuration to be validated. Be sure to define a valid NESTOR_VALIDATION_TARGET",  # pylint: disable=bad-continuation,line-too-long
+        Exception,
+        match="There is no configuration to be validated."
+        " Be sure to define a valid NESTOR_VALIDATION_TARGET",
     ):
         config_validator.validate_deployment_files()
 

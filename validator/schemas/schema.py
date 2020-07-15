@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """Schemas class to validate the Nestor configurations"""
 
 from validator.schemas.application import APPLICATION_SCHEMA

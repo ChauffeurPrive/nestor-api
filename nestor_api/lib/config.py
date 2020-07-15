@@ -26,18 +26,18 @@ def create_temporary_config_copy() -> str:
     return io.create_temporary_copy(Configuration.get_config_path(), "config")
 
 
-def get_app_config(app_name: str) -> dict:
+def get_app_config(app_name: str, config_path: str = Configuration.get_config_path()) -> dict:
     """Load the configuration of an app"""
     app_config_path = os.path.join(
-        Configuration.get_config_path(), Configuration.get_config_app_folder(), f"{app_name}.yaml",
+        config_path, Configuration.get_config_app_folder(), f"{app_name}.yaml",
     )
     if not io.exists(app_config_path):
         raise AppConfigurationNotFoundError(app_name)
 
     app_config = io.from_yaml(app_config_path)
-    environment_config = get_project_config()
+    project_config = get_project_config(config_path)
 
-    config = dict_utils.deep_merge(environment_config, app_config)
+    config = dict_utils.deep_merge(project_config, app_config)
 
     # Awaiting for implementation
     # validate configuration using nestor-config-validator
@@ -45,11 +45,9 @@ def get_app_config(app_name: str) -> dict:
     return _resolve_variables_deep(config)
 
 
-def get_project_config() -> dict:
-    """Load the configuration of the current environment (global configuration)"""
-    project_config_path = os.path.join(
-        Configuration.get_config_path(), Configuration.get_config_project_filename()
-    )
+def get_project_config(config_path: str = Configuration.get_config_path()) -> dict:
+    """Load the global configuration of the project"""
+    project_config_path = os.path.join(config_path, Configuration.get_config_project_filename())
     if not io.exists(project_config_path):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), project_config_path)
 
@@ -63,13 +61,25 @@ def _resolve_variable(template: str, variables: dict, path: str) -> str:
 
     # Resolve pattern '{{variable}}'
     referenced_names = re.findall(r"{{([\w\-.]+)}}", template)
-    for var_name in referenced_names:
-        var_value = variables.get(var_name)
-        if var_value is not None:
-            if not isinstance(var_value, str):
-                raise ConfigurationError(path, "Referenced variable should resolved to a string")
+    if len(referenced_names) > 0:
+        for var_name in referenced_names:
+            var_value = variables.get(var_name)
+            if var_value is not None:
+                if not isinstance(var_value, str):
+                    raise ConfigurationError(
+                        path, "Referenced variable should resolved to a string"
+                    )
 
-            final_value = re.sub(f"{{{{{var_name}}}}}", var_value, final_value)
+                final_value = re.sub(f"{{{{{var_name}}}}}", var_value, final_value)
+        return final_value
+
+    # Resolve pattern '$ENV_VAR'
+    env_variables = re.findall(r"^\$(\w+)$", template)
+    if len(env_variables) > 0:
+        env_var = os.environ.get(env_variables[0])
+        if env_var is not None:
+            final_value = env_var
+        return final_value
 
     # Awaiting for implementation
     # -> Resolve vault definitions "!vault:xxx"

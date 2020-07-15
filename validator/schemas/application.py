@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """The application schema configuration managed by Nestor"""
 
 APPLICATION_SCHEMA = {

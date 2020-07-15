@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
-
 """Test nestor_api.api.api_routes.sample."""
 from unittest import TestCase
 

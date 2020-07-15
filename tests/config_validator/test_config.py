@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring
-
 from validator.config.config import Configuration
 
 
