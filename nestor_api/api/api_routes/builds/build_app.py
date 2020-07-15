@@ -3,6 +3,7 @@
 from http import HTTPStatus
 from threading import Thread
 
+from nestor_api.config.config import Configuration
 import nestor_api.lib.app as app
 import nestor_api.lib.config as config
 import nestor_api.lib.docker as docker
@@ -19,7 +20,7 @@ def _differed_build(app_name: str):
     try:
         # Retrieve app's configuration
         config_dir = config.create_temporary_config_copy()
-        config.change_environment("staging", config_dir)
+        config.change_environment(Configuration.get_config_default_branch(), config_dir)
         app_config = config.get_app_config(app_name, config_dir)
         Logger.debug(
             {"app": app_name, "config_directory": config_dir},

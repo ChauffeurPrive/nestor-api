@@ -22,10 +22,21 @@ class TestApiBuildApp(TestCase):
     def setUp(self):
         self.app_client = create_app().test_client()
 
+    @patch("nestor_api.api.api_routes.builds.build_app.Configuration", autospec=True)
     def test_build_app(
-        self, io_mock, git_mock, docker_mock, config_mock, app_mock, logger_mock, _thread_mock
+        self,
+        configuration_mock,
+        io_mock,
+        git_mock,
+        docker_mock,
+        config_mock,
+        app_mock,
+        logger_mock,
+        _thread_mock,
     ):
         # Mock
+        configuration_mock.get_config_default_branch.return_value = "default"
+
         app_config = {
             "git": {"origin": "git@github.com:my-org/my-app.git"},
             "workflow": ["master", "production"],
@@ -49,7 +60,7 @@ class TestApiBuildApp(TestCase):
         self.assertEqual(text, "Build processing")
 
         config_mock.create_temporary_config_copy.assert_called_once()
-        config_mock.change_environment.assert_called_once_with("staging", "/tmp/config")
+        config_mock.change_environment.assert_called_once_with("default", "/tmp/config")
         config_mock.get_app_config.assert_called_once_with("my-app", "/tmp/config")
 
         git_mock.create_working_repository.assert_called_once_with(

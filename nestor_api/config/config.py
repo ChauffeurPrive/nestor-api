@@ -22,6 +22,11 @@ class Configuration:
         return os.getenv("NESTOR_CONFIG_PROJECT_FILENAME", "project.yaml")
 
     @staticmethod
+    def get_config_default_branch():
+        """Returns the branch to use by default when reading nestor's configuration"""
+        return os.getenv("NESTOR_CONFIG_DEFAULT_BRANCH", "staging")
+
+    @staticmethod
     def get_pristine_path():
         """Returns the path of the project holding pristines"""
         return os.getenv("NESTOR_PRISTINE_PATH", "/tmp/nestor/pristine")
