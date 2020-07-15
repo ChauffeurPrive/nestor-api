@@ -111,7 +111,7 @@ class TestGitLibrary:
         tag = git.tag("/path_to/a_git_repository", "1.0.0")
 
         io_mock.execute.assert_called_once_with(
-            "git tag -a 1.0.0-sha-1ab2c3d 1ab2c3d -m Nestor auto-tag", "/path_to/a_git_repository"
+            "git tag -a 1.0.0-sha-1ab2c3d 1ab2c3d -m 'NESTOR_AUTO_TAG'", "/path_to/a_git_repository"
         )
         assert tag == "1.0.0-sha-1ab2c3d"
 
