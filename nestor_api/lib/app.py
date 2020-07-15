@@ -1,7 +1,7 @@
 """Application library"""
 
 
-def get_version():
+def get_version(_app_dir: str) -> str:
     """Get the application version"""
 
     # Awaiting for implementation
