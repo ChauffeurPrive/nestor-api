@@ -141,6 +141,29 @@ class TestApiBuildApp(TestCase):
             "[/api/builds/:app] Error while tagging and building the app",
         )
 
+    def test_build_app_handle_early_errors(
+        self, io_mock, git_mock, docker_mock, config_mock, _app_mock, logger_mock, _thread_mock
+    ):
+        exception = Exception("Build error")
+        config_mock.create_temporary_config_copy.side_effect = exception
+
+        # Tests
+        response = self.app_client.post("/api/builds/my-app")
+        (status_code, text) = (response.status_code, response.get_data(as_text=True))
+
+        # Assertions
+        self.assertEqual(status_code, 202)
+        self.assertEqual(text, "Build processing")
+
+        docker_mock.push.assert_not_called()
+        git_mock.push.assert_not_called()
+        io_mock.remove.assert_has_calls([])
+        logger_mock.warn.assert_not_called()
+        logger_mock.error.assert_called_once_with(
+            {"app": "my-app", "err": exception},
+            "[/api/builds/:app] Error while tagging and building the app",
+        )
+
     def test_build_app_error_during_cleanup(
         self, io_mock, _git_mock, _docker_mock, config_mock, _app_mock, logger_mock, _thread_mock
     ):
