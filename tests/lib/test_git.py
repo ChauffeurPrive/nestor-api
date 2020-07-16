@@ -1,13 +1,12 @@
 import subprocess
+from unittest import TestCase
 from unittest.mock import call, patch
-
-import pytest
 
 import nestor_api.lib.git as git
 
 
 @patch("nestor_api.lib.git.io", autospec=True)
-class TestGitLibrary:
+class TestGitLibrary(TestCase):
     def test_branch_existing(self, io_mock):
         io_mock.execute.side_effect = ["* feature/branch remotes/origin/feature/branch", ""]
 
@@ -129,7 +128,7 @@ class TestGitLibrary:
     def test_tag_with_invalid_version(self, get_last_commit_hash_mock, _io_mock):
         get_last_commit_hash_mock.return_value = "1ab2c3d"
 
-        with pytest.raises(RuntimeError):
+        with self.assertRaises(RuntimeError):
             git.tag("/path_to/a_git_repository", "my-app", "1.0")
 
     @patch("nestor_api.lib.git.update_repository", autospec=True)
