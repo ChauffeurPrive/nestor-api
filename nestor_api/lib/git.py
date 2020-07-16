@@ -56,7 +56,7 @@ def push(repository_dir: str, branch_name: str = "HEAD") -> None:
     io.execute(f"git push origin {branch_name} --tags --follow-tags", repository_dir)
 
 
-def tag(repository_dir: str, tag_name: str, tag_message: str = "Nestor auto-tag") -> str:
+def tag(repository_dir: str, tag_name: str, tag_message: str = "NESTOR_AUTO_TAG") -> str:
     """Add a tag to the repository"""
     commit_hash = get_last_commit_hash(repository_dir)
 
@@ -65,7 +65,7 @@ def tag(repository_dir: str, tag_name: str, tag_message: str = "Nestor auto-tag"
     if not semver.VersionInfo.isvalid(final_tag):
         raise RuntimeError(f'Invalid version tag: "{final_tag}".')
 
-    io.execute(f"git tag -a {final_tag} {commit_hash} -m {tag_message}", repository_dir)
+    io.execute(f"git tag -a {final_tag} {commit_hash} -m '{tag_message}'", repository_dir)
 
     return final_tag
 

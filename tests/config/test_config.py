@@ -37,3 +37,10 @@ class TestConfig(TestCase):
 
     def test_get_config_project_filename_default(self):
         self.assertEqual(Configuration.get_config_project_filename(), "project.yaml")
+
+    @patch.dict(os.environ, {"NESTOR_CONFIG_DEFAULT_BRANCH": "master"})
+    def test_get_config_default_branch_configured(self):
+        self.assertEqual(Configuration.get_config_default_branch(), "master")
+
+    def test_get_config_default_branch_default(self):
+        self.assertEqual(Configuration.get_config_default_branch(), "staging")
