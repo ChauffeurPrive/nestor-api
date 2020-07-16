@@ -21,6 +21,6 @@ pipenv sync # Add --dev to also install dev dependencies
 |             `NESTOR_CONFIG_PATH` |                        |      | Configuration path                                          |
 |      `NESTOR_CONFIG_APPS_FOLDER` | `apps`                 |      | The application config folder                               |
 | `NESTOR_CONFIG_PROJECT_FILENAME` | `project.yaml`         |      | The project config file                                     |
-|   `NESTOR_CONFIG_DEFAULT_BRANCH` | `HEAD`                 |      | The branch to use by default when reading the configuration |
+|   `NESTOR_CONFIG_DEFAULT_BRANCH` | `staging`              |      | The branch to use by default when reading the configuration |
 |           `NESTOR_PRISTINE_PATH` | `/tmp/nestor/pristine` |      | Pristine path                                               |
 |               `NESTOR_WORK_PATH` | `/tmp/nestor/work`     |      | Work path                                                   |
