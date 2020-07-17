@@ -38,8 +38,6 @@ def is_app_ready_to_progress(app_dir: str, current_step: Optional[str], next_ste
 
 def compare_step_hashes(app_dir: str, branch1: str, branch2: str) -> bool:
     """Compare branches hashes and return True if they are the sames, False otherwise."""
-    git.branch(app_dir, branch1)
-    branch1_hash = git.get_last_commit_hash(app_dir)
-    git.branch(app_dir, branch2)
-    branch2_hash = git.get_last_commit_hash(app_dir)
+    branch1_hash = git.get_last_commit_hash(app_dir, branch1)
+    branch2_hash = git.get_last_commit_hash(app_dir, branch2)
     return branch1_hash == branch2_hash
