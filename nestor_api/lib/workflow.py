@@ -8,7 +8,7 @@ import nestor_api.lib.git as git
 
 def get_ready_to_progress_apps(next_step: str) -> dict:
     """Get a dict of every apps keyed by their name and whose
-    value indicate if the app is ready to progress to next step
+    value indicates if the app is ready to progress to next step
     or not."""
     # Copy the configuration to ensure strict isolation
     config_dir = config.create_temporary_config_copy()

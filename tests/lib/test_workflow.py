@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring disable=missing-function-docstring disable=missing-module-docstring
-
 from unittest import TestCase
 from unittest.mock import call, patch
 
@@ -10,30 +8,32 @@ class TestWorkflow(TestCase):
     @patch("nestor_api.lib.workflow.git")
     def test_compare_unequal_step_hashes(self, git_mock):
         """Should return False when step hashes are unequal."""
+        # Mocks
         git_mock.get_last_commit_hash.side_effect = ["hash-1", "hash-2"]
+
+        # Test
         result = workflow.compare_step_hashes("path_to/app_dir", "step-1", "step-2")
-        self.assertEqual(git_mock.branch.call_count, 2)
+
+        # Assertions
         self.assertEqual(git_mock.get_last_commit_hash.call_count, 2)
-        git_mock.branch.assert_has_calls(
-            [call("path_to/app_dir", "step-1"), call("path_to/app_dir", "step-2")]
-        )
         git_mock.get_last_commit_hash.assert_has_calls(
-            [call("path_to/app_dir"), call("path_to/app_dir")]
+            [call("path_to/app_dir", "step-1"), call("path_to/app_dir", "step-2")]
         )
         self.assertFalse(result)
 
     @patch("nestor_api.lib.workflow.git")
     def test_compare_equal_step_hashes(self, git_mock):
         """Should return True when step hashes are equal."""
+        # Mocks
         git_mock.get_last_commit_hash.side_effect = ["hash-1", "hash-1"]
+
+        # Test
         result = workflow.compare_step_hashes("path_to/app_dir", "step-1", "step-2")
-        self.assertEqual(git_mock.branch.call_count, 2)
+
+        # Assertions
         self.assertEqual(git_mock.get_last_commit_hash.call_count, 2)
-        git_mock.branch.assert_has_calls(
-            [call("path_to/app_dir", "step-1"), call("path_to/app_dir", "step-2")]
-        )
         git_mock.get_last_commit_hash.assert_has_calls(
-            [call("path_to/app_dir"), call("path_to/app_dir")]
+            [call("path_to/app_dir", "step-1"), call("path_to/app_dir", "step-2")]
         )
         self.assertTrue(result)
 
@@ -72,6 +72,7 @@ class TestWorkflow(TestCase):
         git_mock.create_working_repository.return_value = "path_to/app_dir"
         is_app_ready_to_progress_mock.return_value = True
 
+        # Test
         result = workflow.get_ready_to_progress_apps("step-2")
 
         # Assertions

@@ -281,7 +281,7 @@ class TestConfigLibrary(unittest.TestCase):
 
     @patch("nestor_api.lib.config.os.path.isdir", autospec=True)
     def test_list_apps_config_with_incorrect_apps_path(self, is_dir_mock, _io_mock):
-        """Should return an dictionary of apps config."""
+        """Should return a dictionary of apps config."""
         is_dir_mock.return_value = False
 
         with self.assertRaisesRegex(ValueError, "test/apps"):
