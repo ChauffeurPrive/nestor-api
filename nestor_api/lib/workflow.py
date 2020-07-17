@@ -14,7 +14,7 @@ def get_apps_to_move_forward(next_step: str) -> dict:
     config_dir = config.create_temporary_config_copy()
     config.change_environment(next_step, config_dir)
     project_config = config.get_project_config()
-    previous_step = config.get_previous_step(project_config, next_step)
+    previous_step = get_previous_step(project_config, next_step)
     apps = config.list_apps_config()
 
     ready_to_progress_app: dict = {}
@@ -41,3 +41,11 @@ def compare_step_hashes(app_dir: str, branch1: str, branch2: str) -> bool:
     branch1_hash = git.get_last_commit_hash(app_dir, branch1)
     branch2_hash = git.get_last_commit_hash(app_dir, branch2)
     return branch1_hash == branch2_hash
+
+
+def get_previous_step(config_object: dict, target: str) -> Optional[str]:
+    """ Returns the previous step in the defined workflow """
+    index = config_object["workflow"].index(target)
+    if index > 0:
+        return config_object["workflow"][index - 1]
+    return None

@@ -53,16 +53,19 @@ class TestWorkflow(TestCase):
         compare_step_hashes_mock.assert_not_called()
         self.assertTrue(result)
 
+    @patch("nestor_api.lib.workflow.get_previous_step")
     @patch("nestor_api.lib.workflow.is_app_ready_to_progress")
     @patch("nestor_api.lib.workflow.git", autospec=True)
     @patch("nestor_api.lib.workflow.config", autospec=True)
-    def test_get_ready_to_progress_apps(self, config_mock, git_mock, is_app_ready_to_progress_mock):
+    def test_get_ready_to_progress_apps(
+            self, config_mock, git_mock, is_app_ready_to_progress_mock, get_previous_step_mock
+    ):
         """Should return a dict with app name as key and
         boolean for ability to progress as value."""
 
         # Mocks
         config_mock.create_temporary_config_copy.return_value = "config-path"
-        config_mock.get_previous_step.return_value = "step-1"
+        get_previous_step_mock.return_value = "step-1"
         config_mock.get_project_config.return_value = {"some": "config"}
         config_mock.list_apps_config.return_value = {
             "app1": {"name": "app1", "git": {"origin": "fake-remote-url-1"}},
@@ -78,7 +81,7 @@ class TestWorkflow(TestCase):
         # Assertions
         config_mock.change_environment.assert_called_once_with("step-2", "config-path")
         config_mock.get_project_config.assert_called_once()
-        config_mock.get_previous_step.assert_called_once_with({"some": "config"}, "step-2")
+        get_previous_step_mock.assert_called_once_with({"some": "config"}, "step-2")
         git_mock.create_working_repository.assert_has_calls(
             [
                 call("app1", "fake-remote-url-1"),
@@ -94,3 +97,22 @@ class TestWorkflow(TestCase):
             ]
         )
         self.assertEqual(result, {"app1": True, "app2": True, "app3": True})
+
+    def test_get_previous_step_with_previous_step(self):
+        """Should answer with the previous step."""
+        previous_step = workflow.get_previous_step(
+            {"workflow": ["step1", "step2", "step3"]}, "step2"
+        )
+        self.assertEqual(previous_step, "step1")
+
+    def test_get_previous_step_without_previous_step(self):
+        """Should answer with None as the previous step does not exist."""
+        previous_step = workflow.get_previous_step(
+            {"workflow": ["step1", "step2", "step3"]}, "step1"
+        )
+        self.assertIsNone(previous_step)
+
+    def test_get_previous_step_raises_error_with_incorrect_config(self):
+        """Should raise an error if config is malformed."""
+        with self.assertRaises(KeyError):
+            workflow.get_previous_step({}, "step1")

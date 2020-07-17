@@ -235,21 +235,6 @@ class TestConfigLibrary(unittest.TestCase):
                 },
             )
 
-    def test_get_previous_step_with_previous_step(self, _io_mock):
-        """Should answer with the previous step."""
-        previous_step = config.get_previous_step({"workflow": ["step1", "step2", "step3"]}, "step2")
-        self.assertEqual(previous_step, "step1")
-
-    def test_get_previous_step_without_previous_step(self, _io_mock):
-        """Should answer with None as the previous step does not exist."""
-        previous_step = config.get_previous_step({"workflow": ["step1", "step2", "step3"]}, "step1")
-        self.assertIsNone(previous_step)
-
-    def test_get_previous_step_raises_error_with_incorrect_config(self, _io_mock):
-        """Should raise an error if config is malformed."""
-        with self.assertRaises(KeyError):
-            config.get_previous_step({}, "step1")
-
     @patch("nestor_api.lib.config.os.path.isdir", autospec=True)
     @patch("nestor_api.lib.config.os.listdir", autospec=True)
     @patch("nestor_api.lib.config.get_app_config", autospec=True)

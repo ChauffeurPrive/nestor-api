@@ -5,7 +5,6 @@ import errno
 import os
 from pathlib import PurePath
 import re
-from typing import Optional
 
 from nestor_api.config.config import Configuration
 from nestor_api.errors.config.aggregated_configuration_error import AggregatedConfigurationError
@@ -127,14 +126,6 @@ def _resolve_variables_deep(config: dict) -> dict:
         raise AggregatedConfigurationError(errors)
 
     return resolved_config
-
-
-def get_previous_step(config_object: dict, target: str) -> Optional[str]:
-    """ Returns the previous step in the defined workflow """
-    index = config_object["workflow"].index(target)
-    if index > 0:
-        return config_object["workflow"][index - 1]
-    return None
 
 
 # pylint: disable=bad-continuation
