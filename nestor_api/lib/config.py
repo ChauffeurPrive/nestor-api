@@ -3,6 +3,7 @@
 import copy
 import errno
 import os
+from pathlib import PurePath
 import re
 from typing import Optional
 
@@ -145,6 +146,17 @@ def list_apps_config(
 
     if not os.path.isdir(apps_path):
         raise ValueError(apps_path)
-    apps_files = [f for f in os.listdir(apps_path) if os.path.isfile(os.path.join(apps_path, f))]
-    apps_config = [io.from_yaml(file) for file in apps_files]
-    return {app_config["name"]: app_config for app_config in apps_config}
+
+    apps_config_hashmap = {}
+    for file_path in os.listdir(apps_path):
+        basename = os.path.basename(file_path)
+        filename = PurePath(basename)
+        file_extension = "".join(filename.suffixes)
+        app_name = filename.name.replace(file_extension, "")
+
+        # Prevent parsing other files than configuration ones (directories, incorrect extension)
+        if file_extension != ".yml":
+            continue
+
+        apps_config_hashmap[app_name] = get_app_config(app_name)
+    return apps_config_hashmap

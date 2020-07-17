@@ -250,24 +250,28 @@ class TestConfigLibrary(unittest.TestCase):
         with self.assertRaises(KeyError):
             config.get_previous_step({}, "step1")
 
-    @patch("nestor_api.lib.config.os", autospec=True)
-    def test_list_apps_config(self, os_mock, io_mock):
-        """Should return an dictionary of apps config."""
-        os_mock.path.isdir.return_value = True
-        os_mock.listdir.return_value = ["path/to/app-1", "path/to/app-2", "path/to/app-3"]
-        os_mock.path.isfile.return_value = True
+    @patch("nestor_api.lib.config.os.path.isdir", autospec=True)
+    @patch("nestor_api.lib.config.os.listdir", autospec=True)
+    @patch("nestor_api.lib.config.get_app_config", autospec=True)
+    def test_list_apps_config(self, get_app_config_mock, listdir_mock, isdir_mock, _io_mock):
+        """Should return a dictionary of apps config."""
+        isdir_mock.return_value = True
+        listdir_mock.return_value = [
+            "path/to/app-1.yml",
+            "path/to/app-2.yml",
+            "path/to/app-3.ext",
+            "path/to/dir/",
+        ]
 
         def yaml_side_effect(arg):
             # pylint: disable=no-else-return
-            if arg == "path/to/app-1":
+            if arg == "app-1":
                 return {"name": "app-1", "config_key": "value for app-1"}
-            elif arg == "path/to/app-2":
+            elif arg == "app-2":
                 return {"name": "app-2", "config_key": "value for app-2"}
-            elif arg == "path/to/app-3":
-                return {"name": "app-3", "config_key": "value for app-3"}
             return None
 
-        io_mock.from_yaml.side_effect = yaml_side_effect
+        get_app_config_mock.side_effect = yaml_side_effect
 
         result = config.list_apps_config()
         self.assertEqual(
@@ -275,7 +279,6 @@ class TestConfigLibrary(unittest.TestCase):
             {
                 "app-1": {"name": "app-1", "config_key": "value for app-1"},
                 "app-2": {"name": "app-2", "config_key": "value for app-2"},
-                "app-3": {"name": "app-3", "config_key": "value for app-3"},
             },
         )
 
