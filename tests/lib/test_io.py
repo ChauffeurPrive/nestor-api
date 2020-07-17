@@ -1,5 +1,9 @@
 import errno
+import filecmp
+import os
+from pathlib import Path
 import subprocess
+from tempfile import gettempdir
 from unittest import TestCase
 from unittest.mock import mock_open, patch
 
@@ -137,6 +141,13 @@ class TestIoLib(TestCase):
         os_mock.path.join.assert_called_with("/tmp/nestor/work/", "my_path_name")
         self.assertEqual(working_path, "/tmp/nestor/work/my_path_name")
 
+    def test_read(self):
+        sample_file_path = Path(
+            os.path.dirname(__file__), "..", "__fixtures__", "io", "sample.txt"
+        ).resolve()
+        content = io.read(sample_file_path)
+        self.assertEqual(content, "sample file\n")
+
     @patch("nestor_api.lib.io.os", autospec=True)
     @patch("nestor_api.lib.io.shutil", autospec=True)
     def test_remove_single_file(self, shutil_mock, os_mock):
@@ -163,3 +174,29 @@ class TestIoLib(TestCase):
         self.assertEqual(exception, context.exception)
         shutil_mock.rmtree.assert_called_once_with("path/to/remove")
         os_mock.remove.assert_not_called()
+
+    def test_to_yaml(self):
+        dictionary_to_convert = {
+            "name": "John Doe",
+            "contact": {"phone": 1234567890, "mail": "john@doe.com"},
+            "items": ["items1", "items2"],
+        }
+
+        yaml = io.to_yaml(dictionary_to_convert)
+
+        self.assertEqual(
+            yaml,
+            "contact:\n  mail: john@doe.com\n  phone: 1234567890\nitems:\n- "
+            "items1\n- items2\nname: John Doe\n",
+        )
+
+    def test_write(self):
+        temporary_file_path = os.path.join(gettempdir(), "test_write.txt")
+        sample_file_path = Path(
+            os.path.dirname(__file__), "..", "__fixtures__", "io", "sample.txt"
+        ).resolve()
+
+        io.write(temporary_file_path, "sample file\n")
+        self.assertTrue(filecmp.cmp(temporary_file_path, sample_file_path))
+
+        os.remove(temporary_file_path)
