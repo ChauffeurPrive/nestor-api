@@ -22,14 +22,12 @@ def get_apps_to_move_forward(next_step: str) -> dict:
     for (app_name, app_config) in apps.items():
         repository_url = app_config["git"]["origin"]
         app_dir = git.create_working_repository(app_name, repository_url)
-        ready_to_progress_app[app_name] = is_app_ready_to_progress(
-            app_dir, previous_step, next_step
-        )
+        ready_to_progress_app[app_name] = should_app_progress(app_dir, previous_step, next_step)
 
     return ready_to_progress_app
 
 
-def is_app_ready_to_progress(app_dir: str, current_step: Optional[str], next_step: str) -> bool:
+def should_app_progress(app_dir: str, current_step: Optional[str], next_step: str) -> bool:
     """Determines if an app can be advanced to the next step."""
     if current_step is None:
         return True

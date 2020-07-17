@@ -38,27 +38,27 @@ class TestWorkflow(TestCase):
         self.assertTrue(result)
 
     @patch("nestor_api.lib.workflow.are_step_hashes_equal")
-    def test_is_app_ready_to_progress(self, are_step_hashes_equal_mock):
+    def test_should_app_progress(self, are_step_hashes_equal_mock):
         """Should forward to compare_step_hashes."""
         are_step_hashes_equal_mock.return_value = True
-        result = workflow.is_app_ready_to_progress("path_to/app_dir", "step-1", "step-2")
+        result = workflow.should_app_progress("path_to/app_dir", "step-1", "step-2")
         are_step_hashes_equal_mock.assert_called_once_with("path_to/app_dir", "step-1", "step-2")
         self.assertTrue(result)
 
     @patch("nestor_api.lib.workflow.are_step_hashes_equal")
-    def test_is_app_ready_to_progress_without_current_step(self, are_step_hashes_equal_mock):
+    def test_should_app_progress_without_current_step(self, are_step_hashes_equal_mock):
         """Should return true without forwarding to compare_step_hashes."""
         are_step_hashes_equal_mock.return_value = True
-        result = workflow.is_app_ready_to_progress("path_to/app_dir", None, "step-2")
+        result = workflow.should_app_progress("path_to/app_dir", None, "step-2")
         are_step_hashes_equal_mock.assert_not_called()
         self.assertTrue(result)
 
     @patch("nestor_api.lib.workflow.get_previous_step")
-    @patch("nestor_api.lib.workflow.is_app_ready_to_progress")
+    @patch("nestor_api.lib.workflow.should_app_progress")
     @patch("nestor_api.lib.workflow.git", autospec=True)
     @patch("nestor_api.lib.workflow.config", autospec=True)
-    def test_get_ready_to_progress_apps(
-        self, config_mock, git_mock, is_app_ready_to_progress_mock, get_previous_step_mock
+    def test_get_apps_to_move_forward(
+        self, config_mock, git_mock, should_app_progress_mock, get_previous_step_mock
     ):
         """Should return a dict with app name as key and
         boolean for ability to progress as value."""
@@ -73,7 +73,7 @@ class TestWorkflow(TestCase):
             "app3": {"name": "app2", "git": {"origin": "fake-remote-url-3"}},
         }
         git_mock.create_working_repository.return_value = "path_to/app_dir"
-        is_app_ready_to_progress_mock.return_value = True
+        should_app_progress_mock.return_value = True
 
         # Test
         result = workflow.get_apps_to_move_forward("step-2")
@@ -89,7 +89,7 @@ class TestWorkflow(TestCase):
                 call("app3", "fake-remote-url-3"),
             ]
         )
-        is_app_ready_to_progress_mock.assert_has_calls(
+        should_app_progress_mock.assert_has_calls(
             [
                 call("path_to/app_dir", "step-1", "step-2"),
                 call("path_to/app_dir", "step-1", "step-2"),
