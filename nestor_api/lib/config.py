@@ -132,7 +132,7 @@ def _resolve_variables_deep(config: dict) -> dict:
 def list_apps_config(
     config_path=Configuration.get_config_path(), apps_path=Configuration.get_config_app_folder()
 ) -> dict:
-    """Retrieves all of the application names."""
+    """Retrieves all of the apps configurations keyed by app names."""
     apps_path = os.path.join(config_path, apps_path)
 
     if not os.path.isdir(apps_path):

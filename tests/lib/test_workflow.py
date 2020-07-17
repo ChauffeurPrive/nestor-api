@@ -73,7 +73,7 @@ class TestWorkflow(TestCase):
             "app3": {"name": "app2", "git": {"origin": "fake-remote-url-3"}},
         }
         git_mock.create_working_repository.return_value = "path_to/app_dir"
-        should_app_progress_mock.return_value = True
+        should_app_progress_mock.side_effect = [True, True, False]
 
         # Test
         result = workflow.get_apps_to_move_forward("step-2")
@@ -96,7 +96,7 @@ class TestWorkflow(TestCase):
                 call("path_to/app_dir", "step-1", "step-2"),
             ]
         )
-        self.assertEqual(result, {"app1": True, "app2": True, "app3": True})
+        self.assertEqual(result, {"app1": True, "app2": True, "app3": False})
 
     def test_get_previous_step_with_previous_step(self):
         """Should answer with the previous step."""
