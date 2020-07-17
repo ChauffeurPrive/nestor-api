@@ -73,7 +73,7 @@ class TestWorkflow(TestCase):
         is_app_ready_to_progress_mock.return_value = True
 
         # Test
-        result = workflow.get_ready_to_progress_apps("step-2")
+        result = workflow.get_apps_to_move_forward("step-2")
 
         # Assertions
         config_mock.change_environment.assert_called_once_with("step-2", "config-path")
