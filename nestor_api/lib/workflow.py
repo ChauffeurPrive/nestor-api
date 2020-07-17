@@ -43,9 +43,9 @@ def are_step_hashes_equal(app_dir: str, branch1: str, branch2: str) -> bool:
     return branch1_hash == branch2_hash
 
 
-def get_previous_step(config_object: dict, target: str) -> Optional[str]:
+def get_previous_step(config: dict, target: str) -> Optional[str]:
     """ Returns the previous step in the defined workflow """
-    index = config_object["workflow"].index(target)
+    index = config["workflow"].index(target)
     if index > 0:
-        return config_object["workflow"][index - 1]
+        return config["workflow"][index - 1]
     return None
