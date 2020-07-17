@@ -273,4 +273,4 @@ class TestConfigLibrary(unittest.TestCase):
         is_dir_mock.return_value = False
 
         with self.assertRaisesRegex(ValueError, "test/apps"):
-            config.list_apps_config(config_path="test", apps_path="apps")
+            config.list_apps_config(config_path="test")
