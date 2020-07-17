@@ -57,6 +57,7 @@ class TestWorkflow(TestCase):
     @patch("nestor_api.lib.workflow.should_app_progress")
     @patch("nestor_api.lib.workflow.git", autospec=True)
     @patch("nestor_api.lib.workflow.config", autospec=True)
+    # pylint: disable=bad-continuation
     def test_get_apps_to_move_forward(
         self, config_mock, git_mock, should_app_progress_mock, get_previous_step_mock
     ):
