@@ -33,10 +33,10 @@ def is_app_ready_to_progress(app_dir: str, current_step: Optional[str], next_ste
     """Determines if an app can be advanced to the next step."""
     if current_step is None:
         return True
-    return compare_step_hashes(app_dir, current_step, next_step)
+    return are_step_hashes_equal(app_dir, current_step, next_step)
 
 
-def compare_step_hashes(app_dir: str, branch1: str, branch2: str) -> bool:
+def are_step_hashes_equal(app_dir: str, branch1: str, branch2: str) -> bool:
     """Compare branches hashes and return True if they are the sames, False otherwise."""
     branch1_hash = git.get_last_commit_hash(app_dir, branch1)
     branch2_hash = git.get_last_commit_hash(app_dir, branch2)
