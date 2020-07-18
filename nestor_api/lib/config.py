@@ -129,7 +129,7 @@ def _resolve_variables_deep(config: dict) -> dict:
 
 
 # pylint: disable=bad-continuation
-def list_apps_config(config_path=Configuration.get_config_path()) -> dict:
+def list_apps_config(config_path: str = Configuration.get_config_path()) -> dict:
     """Retrieves all of the apps configurations keyed by app names."""
     apps_path = os.path.join(config_path, Configuration.get_config_app_folder())
 

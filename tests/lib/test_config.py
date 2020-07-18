@@ -258,7 +258,7 @@ class TestConfigLibrary(unittest.TestCase):
 
         get_app_config_mock.side_effect = yaml_side_effect
 
-        result = config.list_apps_config()
+        result = config.list_apps_config("test")
         self.assertEqual(
             result,
             {
@@ -273,4 +273,4 @@ class TestConfigLibrary(unittest.TestCase):
         is_dir_mock.return_value = False
 
         with self.assertRaisesRegex(ValueError, "test/apps"):
-            config.list_apps_config(config_path="test")
+            config.list_apps_config("test")
