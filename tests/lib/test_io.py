@@ -131,6 +131,15 @@ class TestIoLib(TestCase):
         self.assertTrue(tmp_directory_name.startswith("test-prefix-"))
         self.assertEqual(generated_path, "/tmp/nestor/work/test-prefix-")
 
+    @patch("nestor_api.lib.io.get_working_path", autospec=True)
+    def test_get_temporary_directory_path_default(self, get_working_path_mock):
+        get_working_path_mock.return_value = "/tmp/nestor/work/1594903736050223-454134888"
+        generated_path = io.get_temporary_directory_path()
+
+        tmp_directory_name = get_working_path_mock.call_args[0][0]
+        self.assertRegex(tmp_directory_name, "^[0-9]{14,16}-[0-9]{9}$")
+        self.assertEqual(generated_path, "/tmp/nestor/work/1594903736050223-454134888")
+
     @patch("nestor_api.lib.io.Configuration", autospec=True)
     @patch("nestor_api.lib.io.os", autospec=True)
     def test_get_working_path(self, os_mock, configuration_mock):
