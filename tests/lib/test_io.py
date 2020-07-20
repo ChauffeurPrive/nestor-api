@@ -8,6 +8,7 @@ from unittest import TestCase
 from unittest.mock import mock_open, patch
 
 import nestor_api.lib.io as io
+from yaml_lib.duplicate_keys import YamlLoader  # type: ignore
 
 
 class TestIoLib(TestCase):
@@ -164,12 +165,12 @@ class TestIoLib(TestCase):
     @patch("nestor_api.lib.io.yaml", autospec=True)
     def test_read_yaml(self, yaml_mock):
         with patch("nestor_api.lib.io.open", mock_open(read_data="key: value")) as open_mock:
-            yaml_mock.safe_load.return_value = {"key": "value"}
+            yaml_mock.load.return_value = {"key": "value"}
 
             parsed_yaml = io.read_yaml("example.yml")
 
             open_mock.assert_called_with("example.yml", "r")
-            yaml_mock.safe_load.assert_called_once_with("key: value")
+            yaml_mock.load.assert_called_once_with("key: value", Loader=YamlLoader)
             self.assertEqual(parsed_yaml, {"key": "value"})
 
     @patch("nestor_api.lib.io.os", autospec=True)

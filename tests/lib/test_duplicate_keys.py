@@ -1,8 +1,11 @@
 import os
-import yaml
 from pathlib import Path
 from unittest import TestCase
-from yaml_lib.duplicate_keys import YamlLoader
+
+import yaml
+
+from yaml_lib.duplicate_keys import YamlLoader  # type: ignore
+
 
 class TestDetectDuplicateKeysInYaml(TestCase):
     def test_read_yaml_disallow_duplicate_keys(self):

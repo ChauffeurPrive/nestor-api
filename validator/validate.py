@@ -9,6 +9,7 @@ import yaml
 from validator.config.config import Configuration, SupportedValidations
 from validator.errors.errors import InvalidTargetPathError
 from validator.schemas.schema import SCHEMAS
+from yaml_lib.duplicate_keys import YamlLoader  # type: ignore
 
 
 def is_yaml_file(file_name):
@@ -51,7 +52,7 @@ def validate_file(file_path: str, schema: dict) -> str:
     """
     with open(file_path, "r") as file:
         yaml_file_data = file.read()
-        yaml_file = yaml.safe_load(yaml_file_data)
+        yaml_file = yaml.load(yaml_file_data, Loader=YamlLoader)
         return jsonschema.validate(yaml_file, schema)
 
 
