@@ -46,6 +46,16 @@ def get_app_config(app_name: str, config_path: str = Configuration.get_config_pa
     return _resolve_variables_deep(config)
 
 
+def get_cronjobs(app_config: dict) -> list:
+    """Get cronjobs processes"""
+    return [process for process in app_config["processes"] if process["is_cronjob"]]
+
+
+def get_processes(app_config: dict) -> list:
+    """Get processes (not cronjobs)"""
+    return [process for process in app_config["processes"] if not process["is_cronjob"]]
+
+
 def get_project_config(config_path: str = Configuration.get_config_path()) -> dict:
     """Load the global configuration of the project"""
     project_config_path = os.path.join(config_path, Configuration.get_config_project_filename())
