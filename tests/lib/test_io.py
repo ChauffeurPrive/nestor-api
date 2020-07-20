@@ -11,6 +11,21 @@ import nestor_api.lib.io as io
 
 
 class TestIoLib(TestCase):
+    def test_convert_to_yaml(self):
+        dictionary_to_convert = {
+            "name": "John Doe",
+            "contact": {"phone": 1234567890, "mail": "john@doe.com"},
+            "items": ["items1", "items2"],
+        }
+
+        yaml = io.convert_to_yaml(dictionary_to_convert)
+
+        self.assertEqual(
+            yaml,
+            "contact:\n  mail: john@doe.com\n  phone: 1234567890\nitems:\n- "
+            "items1\n- items2\nname: John Doe\n",
+        )
+
     @patch("nestor_api.lib.io.shutil", autospec=True)
     def test_copy_single_file(self, shutil_mock):
         shutil_mock.copytree.side_effect = OSError(errno.ENOTDIR, "some reason")
@@ -88,17 +103,6 @@ class TestIoLib(TestCase):
         path_mock.return_value.exists.assert_called_once()
         self.assertFalse(result)
 
-    @patch("nestor_api.lib.io.yaml", autospec=True)
-    def test_from_yaml(self, yaml_mock):
-        with patch("nestor_api.lib.io.open", mock_open(read_data="key: value")) as open_mock:
-            yaml_mock.safe_load.return_value = {"key": "value"}
-
-            parsed_yaml = io.from_yaml("example.yml")
-
-            open_mock.assert_called_with("example.yml", "r")
-            yaml_mock.safe_load.assert_called_once_with("key: value")
-            self.assertEqual(parsed_yaml, {"key": "value"})
-
     @patch("nestor_api.lib.io.Configuration", autospec=True)
     def test_get_pristine_path(self, configuration_mock):
         configuration_mock.get_pristine_path.return_value = "/tmp/nestor/pristine"
@@ -148,6 +152,17 @@ class TestIoLib(TestCase):
         content = io.read(sample_file_path)
         self.assertEqual(content, "sample file\n")
 
+    @patch("nestor_api.lib.io.yaml", autospec=True)
+    def test_read_yaml(self, yaml_mock):
+        with patch("nestor_api.lib.io.open", mock_open(read_data="key: value")) as open_mock:
+            yaml_mock.safe_load.return_value = {"key": "value"}
+
+            parsed_yaml = io.read_yaml("example.yml")
+
+            open_mock.assert_called_with("example.yml", "r")
+            yaml_mock.safe_load.assert_called_once_with("key: value")
+            self.assertEqual(parsed_yaml, {"key": "value"})
+
     @patch("nestor_api.lib.io.os", autospec=True)
     @patch("nestor_api.lib.io.shutil", autospec=True)
     def test_remove_single_file(self, shutil_mock, os_mock):
@@ -174,21 +189,6 @@ class TestIoLib(TestCase):
         self.assertEqual(exception, context.exception)
         shutil_mock.rmtree.assert_called_once_with("path/to/remove")
         os_mock.remove.assert_not_called()
-
-    def test_to_yaml(self):
-        dictionary_to_convert = {
-            "name": "John Doe",
-            "contact": {"phone": 1234567890, "mail": "john@doe.com"},
-            "items": ["items1", "items2"],
-        }
-
-        yaml = io.to_yaml(dictionary_to_convert)
-
-        self.assertEqual(
-            yaml,
-            "contact:\n  mail: john@doe.com\n  phone: 1234567890\nitems:\n- "
-            "items1\n- items2\nname: John Doe\n",
-        )
 
     def test_write(self):
         temporary_file_path = os.path.join(gettempdir(), "test_write.txt")

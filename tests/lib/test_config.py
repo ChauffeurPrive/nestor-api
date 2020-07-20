@@ -36,7 +36,7 @@ class TestConfigLibrary(unittest.TestCase):
         # Mocks
         configuration_mock.get_config_app_folder.return_value = "apps"
         io_mock.exists.return_value = True
-        io_mock.from_yaml.return_value = {
+        io_mock.read_yaml.return_value = {
             "sub_domain": "backoffice",
             "variables": {
                 "ope": {"VARIABLE_OPE_2": "ope_2_override", "VARIABLE_OPE_3": "ope_3"},
@@ -56,7 +56,7 @@ class TestConfigLibrary(unittest.TestCase):
 
         # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
-        io_mock.from_yaml.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
+        io_mock.read_yaml.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
         get_project_config_mock.assert_called_once()
         self.assertEqual(
             app_config,
@@ -93,7 +93,7 @@ class TestConfigLibrary(unittest.TestCase):
         # Mocks
         configuration_mock.get_config_project_filename.return_value = "project.yaml"
         io_mock.exists.return_value = True
-        io_mock.from_yaml.return_value = {
+        io_mock.read_yaml.return_value = {
             "domain": "website.com",
             "variables": {
                 "ope": {"VARIABLE_OPE_1": "ope_1", "VARIABLE_OPE_2": "ope_2"},
@@ -106,7 +106,7 @@ class TestConfigLibrary(unittest.TestCase):
 
         # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/project.yaml")
-        io_mock.from_yaml.assert_called_once_with("tests/__fixtures__/config/project.yaml")
+        io_mock.read_yaml.assert_called_once_with("tests/__fixtures__/config/project.yaml")
         self.assertEqual(
             environment_config,
             {

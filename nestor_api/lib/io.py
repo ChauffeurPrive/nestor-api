@@ -1,16 +1,21 @@
 """I/O library"""
+from datetime import datetime
 import errno
 import math
 import os
-import shutil
-import subprocess
-from datetime import datetime
 from pathlib import Path
 from random import random
+import shutil
+import subprocess
 
 import yaml
 
 from nestor_api.config.config import Configuration
+
+
+def convert_to_yaml(data: dict) -> str:
+    """Converts a dictionary into a valid yaml string"""
+    return yaml.safe_dump(data)
 
 
 def copy(source: str, destination: str) -> None:
@@ -52,14 +57,6 @@ def exists(file_path: str) -> bool:
     return Path(file_path).exists()
 
 
-def from_yaml(file_path: str) -> dict:
-    """Returns a dictionary from yaml file path"""
-    with open(file_path, "r") as file_data:
-        yaml_data = file_data.read()
-
-    return yaml.safe_load(yaml_data)
-
-
 def get_pristine_path(pristine_path_name: str) -> str:
     """Returns the pristine path"""
     return os.path.join(Configuration.get_pristine_path(), pristine_path_name)
@@ -91,16 +88,19 @@ def get_working_path(working_path_name: str) -> str:
     return os.path.join(Configuration.get_working_path(), working_path_name)
 
 
-def to_yaml(data: dict) -> str:
-    """Converts a dictionary into a valid yaml string"""
-    return yaml.safe_dump(data)
-
-
 def read(file_path: str) -> str:
     """Read the file content at the given path"""
     with open(file_path, "r") as file:
         file_content = file.read()
     return file_content
+
+
+def read_yaml(file_path: str) -> dict:
+    """Returns a dictionary from yaml file path"""
+    with open(file_path, "r") as file_data:
+        yaml_data = file_data.read()
+
+    return yaml.safe_load(yaml_data)
 
 
 def remove(file_path: str) -> None:
