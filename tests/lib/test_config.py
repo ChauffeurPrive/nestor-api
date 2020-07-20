@@ -88,6 +88,42 @@ class TestConfigLibrary(unittest.TestCase):
 
         self.assertEqual("Configuration file not found for app: some-app", str(context.exception))
 
+    def test_get_processes(self, _io_mock):
+        app_config = {
+            "name": "my-app",
+            "processes": [
+                {"name": "web", "start_command": "./web", "is_cronjob": False,},
+                {"name": "cleaner", "start_command": "./clean", "is_cronjob": True,},
+                {"name": "worker", "start_command": "./worker", "is_cronjob": False,},
+            ],
+        }
+
+        applications = config.get_processes(app_config)
+
+        self.assertEqual(
+            applications,
+            [
+                {"name": "web", "start_command": "./web", "is_cronjob": False,},
+                {"name": "worker", "start_command": "./worker", "is_cronjob": False,},
+            ],
+        )
+
+    def test_get_cronjobs(self, _io_mock):
+        app_config = {
+            "name": "my-app",
+            "processes": [
+                {"name": "web", "start_command": "./web", "is_cronjob": False,},
+                {"name": "cleaner", "start_command": "./clean", "is_cronjob": True,},
+                {"name": "worker", "start_command": "./worker", "is_cronjob": False,},
+            ],
+        }
+
+        cronjobs = config.get_cronjobs(app_config)
+
+        self.assertEqual(
+            cronjobs, [{"name": "cleaner", "start_command": "./clean", "is_cronjob": True,}]
+        )
+
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config(self, configuration_mock, io_mock):
         # Mocks
