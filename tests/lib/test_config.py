@@ -30,13 +30,17 @@ class TestConfigLibrary(unittest.TestCase):
         io_mock.create_temporary_copy.assert_called_once_with("tests/__fixtures__/config", "config")
         self.assertEqual(path, "/temporary/path")
 
+    @patch("yaml_lib.read_yaml", autospec=True)
     @patch("nestor_api.lib.config.get_project_config", autospec=True)
     @patch("nestor_api.lib.config.Configuration", autospec=True)
-    def test_get_app_config(self, configuration_mock, get_project_config_mock, io_mock):
+    # pylint: disable=bad-continuation
+    def test_get_app_config(
+        self, configuration_mock, get_project_config_mock, read_yaml_mock, io_mock
+    ):
         # Mocks
         configuration_mock.get_config_app_folder.return_value = "apps"
         io_mock.exists.return_value = True
-        io_mock.read_yaml.return_value = {
+        read_yaml_mock.return_value = {
             "sub_domain": "backoffice",
             "variables": {
                 "ope": {"VARIABLE_OPE_2": "ope_2_override", "VARIABLE_OPE_3": "ope_3"},
@@ -56,7 +60,7 @@ class TestConfigLibrary(unittest.TestCase):
 
         # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
-        io_mock.read_yaml.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
+        read_yaml_mock.assert_called_once_with("tests/__fixtures__/config/apps/backoffice.yaml")
         get_project_config_mock.assert_called_once()
         self.assertEqual(
             app_config,
@@ -124,12 +128,13 @@ class TestConfigLibrary(unittest.TestCase):
             cronjobs, [{"name": "cleaner", "start_command": "./clean", "is_cronjob": True,}]
         )
 
+    @patch("yaml_lib.read_yaml", autospec=True)
     @patch("nestor_api.lib.config.Configuration", autospec=True)
-    def test_get_project_config(self, configuration_mock, io_mock):
+    def test_get_project_config(self, configuration_mock, read_yaml_mock, io_mock):
         # Mocks
         configuration_mock.get_config_project_filename.return_value = "project.yaml"
         io_mock.exists.return_value = True
-        io_mock.read_yaml.return_value = {
+        read_yaml_mock.return_value = {
             "domain": "website.com",
             "variables": {
                 "ope": {"VARIABLE_OPE_1": "ope_1", "VARIABLE_OPE_2": "ope_2"},
@@ -142,7 +147,7 @@ class TestConfigLibrary(unittest.TestCase):
 
         # Assertions
         io_mock.exists.assert_called_once_with("tests/__fixtures__/config/project.yaml")
-        io_mock.read_yaml.assert_called_once_with("tests/__fixtures__/config/project.yaml")
+        read_yaml_mock.assert_called_once_with("tests/__fixtures__/config/project.yaml")
         self.assertEqual(
             environment_config,
             {
