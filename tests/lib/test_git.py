@@ -44,14 +44,14 @@ class TestGitLibrary(TestCase):
         io_mock.create_temporary_copy.assert_called_once_with(
             "/fixtures-nestor-pristine/my-app", "my-app"
         )
-        assert repository_dir == "/fixtures-nestor-work/my-app-11111111111111"
+        self.assertEqual(repository_dir, "/fixtures-nestor-work/my-app-11111111111111")
 
     def test_get_last_commit_hash_without_reference(self, io_mock):
         io_mock.execute.return_value = "1ab2c3d"
 
         last_commit_hash = git.get_last_commit_hash("/path_to/a_git_repository")
 
-        assert last_commit_hash == "1ab2c3d"
+        self.assertEqual(last_commit_hash, "1ab2c3d")
         io_mock.execute.assert_called_once_with(
             "git rev-parse --short HEAD", "/path_to/a_git_repository"
         )
@@ -71,7 +71,7 @@ class TestGitLibrary(TestCase):
 
         last_tag = git.get_last_tag("/path_to/a_git_repository")
 
-        assert last_tag == "1.0.0-sha-a2b3c4"
+        self.assertEqual(last_tag, "1.0.0-sha-a2b3c4")
         io_mock.execute.assert_called_once_with(
             "git describe --always --abbrev=0", "/path_to/a_git_repository"
         )
@@ -81,7 +81,7 @@ class TestGitLibrary(TestCase):
 
         commit_hash = git.get_commit_hash_from_tag("/path_to/a_git_repository", "1.0.0-sha-a2b3c4")
 
-        assert commit_hash == "a2b3c4d5e6f7g8h9"
+        self.assertEqual(commit_hash, "a2b3c4d5e6f7g8h9")
         io_mock.execute.assert_called_once_with(
             "git rev-list -1 1.0.0-sha-a2b3c4", "/path_to/a_git_repository"
         )
@@ -91,7 +91,7 @@ class TestGitLibrary(TestCase):
 
         remote_url = git.get_remote_url("/path_to/a_git_repository")
 
-        assert remote_url == "git@github.com:org/repo.git"
+        self.assertEqual(remote_url, "git@github.com:org/repo.git")
         io_mock.execute.assert_called_once_with(
             "git remote get-url origin", "/path_to/a_git_repository",
         )
@@ -101,7 +101,7 @@ class TestGitLibrary(TestCase):
 
         remote_url = git.get_remote_url("/path_to/a_git_repository", "custom_remote_name")
 
-        assert remote_url == "git@github.com:org/repo.git"
+        self.assertEqual(remote_url, "git@github.com:org/repo.git")
         io_mock.execute.assert_called_once_with(
             "git remote get-url custom_remote_name", "/path_to/a_git_repository",
         )
@@ -122,7 +122,7 @@ class TestGitLibrary(TestCase):
         io_mock.execute.assert_called_once_with(
             "git tag -a 1.0.0-sha-1ab2c3d 1ab2c3d -m 'NESTOR_AUTO_TAG'", "/path_to/a_git_repository"
         )
-        assert tag == "1.0.0-sha-1ab2c3d"
+        self.assertEqual(tag, "1.0.0-sha-1ab2c3d")
 
     @patch("nestor_api.lib.git.get_last_commit_hash", autospec=True)
     def test_tag_with_invalid_version(self, get_last_commit_hash_mock, _io_mock):
@@ -140,7 +140,7 @@ class TestGitLibrary(TestCase):
         update_repository_mock.assert_called_once_with(
             "/fixtures-nestor-pristine/my-app", "git@github.com:org/repo.git"
         )
-        assert repository_dir == "/fixtures-nestor-pristine/my-app"
+        self.assertEqual(repository_dir, "/fixtures-nestor-pristine/my-app")
 
     def test_update_repository_clone_if_not_existing_default_revision(self, io_mock):
         io_mock.exists.return_value = False

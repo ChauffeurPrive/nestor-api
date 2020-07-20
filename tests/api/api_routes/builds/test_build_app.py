@@ -157,7 +157,9 @@ class TestApiBuildApp(TestCase):
 
         docker_mock.push.assert_not_called()
         git_mock.push.assert_not_called()
-        io_mock.remove.assert_has_calls([])
+
+        io_mock.remove.assert_not_called()
+
         logger_mock.warn.assert_not_called()
         logger_mock.error.assert_called_once_with(
             {"app": "my-app", "err": exception},

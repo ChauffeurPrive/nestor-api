@@ -43,6 +43,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+coverage
 nosetests.xml
 coverage.xml
 *.cover
@@ -129,4 +130,3 @@ dmypy.json
 # Editor
 .vscode
 .idea
-coverage
