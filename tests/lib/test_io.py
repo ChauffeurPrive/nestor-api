@@ -161,15 +161,6 @@ class TestIoLib(TestCase):
         content = io.read(sample_file_path)
         self.assertEqual(content, "sample file\n")
 
-    @patch("nestor_api.lib.io.yaml_lib", autospec=True)
-    def test_read_yaml(self, yaml_mock):
-        yaml_mock.load_yaml_from_path.return_value = {"key": "value"}
-
-        parsed_yaml = io.read_yaml("example.yml")
-
-        yaml_mock.load_yaml_from_path.assert_called_once_with("example.yml")
-        self.assertEqual(parsed_yaml, {"key": "value"})
-
     @patch("nestor_api.lib.io.os", autospec=True)
     @patch("nestor_api.lib.io.shutil", autospec=True)
     def test_remove_single_file(self, shutil_mock, os_mock):

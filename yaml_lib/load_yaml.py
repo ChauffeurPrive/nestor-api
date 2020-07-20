@@ -5,7 +5,12 @@ import yaml
 from yaml_lib.duplicate_keys_loader import DuplicateKeysLoader
 
 
-def load_yaml_from_path(file_path: str) -> dict:
+def parse_yaml(yaml_data: str) -> dict:
+    """Parse yaml from a string"""
+    return yaml.load(yaml_data, Loader=DuplicateKeysLoader)
+
+
+def read_yaml(file_path: str) -> dict:
     """Loads a yaml file from a path using the DuplicateKeysLoader
 
     Args:
@@ -16,4 +21,4 @@ def load_yaml_from_path(file_path: str) -> dict:
     """
     with open(file_path, "r") as file_data:
         yaml_data = file_data.read()
-    return yaml.load(yaml_data, Loader=DuplicateKeysLoader)
+    return parse_yaml(yaml_data)

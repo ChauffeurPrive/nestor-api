@@ -12,6 +12,7 @@ from nestor_api.errors.config.app_configuration_not_found_error import AppConfig
 from nestor_api.errors.config.configuration_error import ConfigurationError
 import nestor_api.lib.io as io
 import nestor_api.utils.dict as dict_utils
+import yaml_lib
 
 
 def change_environment(environment: str, config_path=Configuration.get_config_path()):
@@ -35,7 +36,7 @@ def get_app_config(app_name: str, config_path: str = Configuration.get_config_pa
     if not io.exists(app_config_path):
         raise AppConfigurationNotFoundError(app_name)
 
-    app_config = io.read_yaml(app_config_path)
+    app_config = yaml_lib.read_yaml(app_config_path)
     project_config = get_project_config(config_path)
 
     config = dict_utils.deep_merge(project_config, app_config)
@@ -62,7 +63,7 @@ def get_project_config(config_path: str = Configuration.get_config_path()) -> di
     if not io.exists(project_config_path):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), project_config_path)
 
-    project_config = io.read_yaml(project_config_path)
+    project_config = yaml_lib.read_yaml(project_config_path)
 
     return _resolve_variables_deep(project_config)
 

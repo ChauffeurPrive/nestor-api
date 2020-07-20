@@ -1,3 +1,3 @@
 """Library to handle all the YAML related functions"""
 
-from .load_yaml import load_yaml_from_path
+from .load_yaml import parse_yaml, read_yaml

@@ -49,7 +49,7 @@ def validate_file(file_path: str, schema: dict) -> str:
     Returns:
         String: The validated file
     """
-    yaml_file = yaml_lib.load_yaml_from_path(file_path)
+    yaml_file = yaml_lib.read_yaml(file_path)
     return jsonschema.validate(yaml_file, schema)
 
 
