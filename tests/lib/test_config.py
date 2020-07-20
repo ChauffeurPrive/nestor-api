@@ -243,7 +243,7 @@ class TestConfigLibrary(unittest.TestCase):
         isdir_mock.return_value = True
         listdir_mock.return_value = [
             "path/to/app-1.yml",
-            "path/to/app-2.yml",
+            "path/to/app-2.yaml",
             "path/to/app-3.ext",
             "path/to/dir/",
         ]

@@ -144,7 +144,7 @@ def list_apps_config(config_path: str = Configuration.get_config_path()) -> dict
         app_name = filename.name.replace(file_extension, "")
 
         # Prevent parsing other files than configuration ones (directories, incorrect extension)
-        if file_extension != ".yml":
+        if file_extension not in [".yml", ".yaml"]:
             continue
 
         apps_config_hashmap[app_name] = get_app_config(app_name)
