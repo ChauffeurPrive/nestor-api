@@ -4,6 +4,7 @@ from typing import Optional
 
 import nestor_api.lib.config as config
 import nestor_api.lib.git as git
+import nestor_api.lib.io as io
 
 
 def get_apps_to_move_forward(next_step: str) -> dict:
@@ -23,6 +24,7 @@ def get_apps_to_move_forward(next_step: str) -> dict:
         repository_url = app_config["git"]["origin"]
         app_dir = git.create_working_repository(app_name, repository_url)
         ready_to_progress_app[app_name] = should_app_progress(app_dir, previous_step, next_step)
+        io.remove(app_dir)
 
     return ready_to_progress_app
 

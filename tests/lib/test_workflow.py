@@ -57,9 +57,10 @@ class TestWorkflow(TestCase):
     @patch("nestor_api.lib.workflow.should_app_progress")
     @patch("nestor_api.lib.workflow.git", autospec=True)
     @patch("nestor_api.lib.workflow.config", autospec=True)
+    @patch("nestor_api.lib.workflow.io", autospec=True)
     # pylint: disable=bad-continuation
     def test_get_apps_to_move_forward(
-        self, config_mock, git_mock, should_app_progress_mock, get_previous_step_mock
+        self, io_mock, config_mock, git_mock, should_app_progress_mock, get_previous_step_mock
     ):
         """Should return a dict with app name as key and
         boolean for ability to progress as value."""
@@ -97,6 +98,7 @@ class TestWorkflow(TestCase):
                 call("path_to/app_dir", "step-1", "step-2"),
             ]
         )
+        self.assertEqual(io_mock.remove.call_count, 3)
         self.assertEqual(result, {"app1": True, "app2": True, "app3": False})
 
     def test_get_previous_step_with_previous_step(self):
