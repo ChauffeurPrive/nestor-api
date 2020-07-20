@@ -234,3 +234,43 @@ class TestConfigLibrary(unittest.TestCase):
                     ],
                 },
             )
+
+    @patch("nestor_api.lib.config.os.path.isdir", autospec=True)
+    @patch("nestor_api.lib.config.os.listdir", autospec=True)
+    @patch("nestor_api.lib.config.get_app_config", autospec=True)
+    def test_list_apps_config(self, get_app_config_mock, listdir_mock, isdir_mock, _io_mock):
+        """Should return a dictionary of apps config."""
+        isdir_mock.return_value = True
+        listdir_mock.return_value = [
+            "path/to/app-1.yml",
+            "path/to/app-2.yaml",
+            "path/to/app-3.ext",
+            "path/to/dir/",
+        ]
+
+        def yaml_side_effect(arg):
+            # pylint: disable=no-else-return
+            if arg == "app-1":
+                return {"name": "app-1", "config_key": "value for app-1"}
+            elif arg == "app-2":
+                return {"name": "app-2", "config_key": "value for app-2"}
+            return None
+
+        get_app_config_mock.side_effect = yaml_side_effect
+
+        result = config.list_apps_config("test")
+        self.assertEqual(
+            result,
+            {
+                "app-1": {"name": "app-1", "config_key": "value for app-1"},
+                "app-2": {"name": "app-2", "config_key": "value for app-2"},
+            },
+        )
+
+    @patch("nestor_api.lib.config.os.path.isdir", autospec=True)
+    def test_list_apps_config_with_incorrect_apps_path(self, is_dir_mock, _io_mock):
+        """Should return a dictionary of apps config."""
+        is_dir_mock.return_value = False
+
+        with self.assertRaisesRegex(ValueError, "test/apps"):
+            config.list_apps_config("test")

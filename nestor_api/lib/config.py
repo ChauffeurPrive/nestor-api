@@ -3,6 +3,7 @@
 import copy
 import errno
 import os
+from pathlib import PurePath
 import re
 
 from nestor_api.config.config import Configuration
@@ -125,3 +126,26 @@ def _resolve_variables_deep(config: dict) -> dict:
         raise AggregatedConfigurationError(errors)
 
     return resolved_config
+
+
+# pylint: disable=bad-continuation
+def list_apps_config(config_path: str = Configuration.get_config_path()) -> dict:
+    """Retrieves all of the apps configurations keyed by app names."""
+    apps_path = os.path.join(config_path, Configuration.get_config_app_folder())
+
+    if not os.path.isdir(apps_path):
+        raise ValueError(apps_path)
+
+    apps_config_hashmap = {}
+    for file_path in os.listdir(apps_path):
+        basename = os.path.basename(file_path)
+        filename = PurePath(basename)
+        file_extension = "".join(filename.suffixes)
+        app_name = filename.name.replace(file_extension, "")
+
+        # Prevent parsing other files than configuration ones (directories, incorrect extension)
+        if file_extension not in [".yml", ".yaml"]:
+            continue
+
+        apps_config_hashmap[app_name] = get_app_config(app_name)
+    return apps_config_hashmap

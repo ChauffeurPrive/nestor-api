@@ -47,7 +47,7 @@ class TestGitLibrary:
         )
         assert repository_dir == "/fixtures-nestor-work/my-app-11111111111111"
 
-    def test_get_last_commit_hash(self, io_mock):
+    def test_get_last_commit_hash_without_reference(self, io_mock):
         io_mock.execute.return_value = "1ab2c3d"
 
         last_commit_hash = git.get_last_commit_hash("/path_to/a_git_repository")
@@ -55,6 +55,16 @@ class TestGitLibrary:
         assert last_commit_hash == "1ab2c3d"
         io_mock.execute.assert_called_once_with(
             "git rev-parse --short HEAD", "/path_to/a_git_repository"
+        )
+
+    def test_get_last_commit_hash_with_reference(self, io_mock):
+        io_mock.execute.return_value = "1ab2c3d"
+
+        last_commit_hash = git.get_last_commit_hash("/path_to/a_git_repository", "master")
+
+        assert last_commit_hash == "1ab2c3d"
+        io_mock.execute.assert_called_once_with(
+            "git rev-parse --short master", "/path_to/a_git_repository"
         )
 
     def test_get_last_tag(self, io_mock):

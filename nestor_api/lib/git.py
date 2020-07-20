@@ -41,9 +41,9 @@ def get_remote_url(repository_dir: str, remote_name: str = "origin") -> str:
     return io.execute(f"git remote get-url {remote_name}", repository_dir)
 
 
-def get_last_commit_hash(repository_dir: str) -> str:
+def get_last_commit_hash(repository_dir: str, reference: str = "HEAD") -> str:
     """Retrieves the last commit hash of a repository (locally)"""
-    return io.execute("git rev-parse --short HEAD", repository_dir)
+    return io.execute(f"git rev-parse --short {reference}", repository_dir)
 
 
 def get_commit_hash_from_tag(repository_dir: str, tag_name: str) -> str:
