@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from jsonschema import ValidationError  # type: ignore
+from yaml.constructor import ConstructorError
 
 from tests.__fixtures__.example_schema import EXAMPLE_SCHEMA  # type: ignore
 from validator.errors.errors import InvalidTargetPathError
@@ -91,7 +92,8 @@ class TestValidateLibrary(unittest.TestCase):
         build_apps_path_mock.return_value = real_config_fixture_path
         get_validation_target_mock.return_value = "APPLICATIONS"
         try:
-            config_validator.validate_deployment_files()
+            result = config_validator.validate_deployment_files()
+            self.assertEqual(result, [])
         except Exception as err:  # pylint: disable=broad-except
             self.fail(f"validate_deployment_files() raised an unexpected Exception {err}")
 
@@ -109,6 +111,21 @@ class TestValidateLibrary(unittest.TestCase):
         build_project_conf_path_mock.return_value = real_config_fixture_path
 
         try:
-            config_validator.validate_deployment_files()
+            result = config_validator.validate_deployment_files()
+            self.assertEqual(result, [])
         except Exception as err:  # pylint: disable=broad-except
             self.fail(f"validate_deployment_files() raised an unexpected Exception {err}")
+
+    @patch("validator.validate.build_apps_path")
+    @patch("validator.config.config.Configuration.get_validation_target")
+    def test_validate_apps_with_errors(self, get_validation_target_mock, build_apps_path_mock):
+        real_config_fixture_path = Path(
+            os.path.dirname(__file__), "..", "__fixtures__", "validator", "apps_with_errors"
+        ).resolve()
+        build_apps_path_mock.return_value = real_config_fixture_path
+        get_validation_target_mock.return_value = "APPLICATIONS"
+
+        expected_error = "Found a duplicate key: app"
+        result = config_validator.validate_deployment_files()
+        self.assertIsInstance(result[0], ConstructorError)
+        self.assertEqual(str(result[0]), expected_error)
