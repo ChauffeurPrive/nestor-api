@@ -1,4 +1,4 @@
-"""Constructor to not allow duplicated keys
+"""A custom YAML Loader to comply with the official YAML Spec
 
 This constructor is a workaround for the issue: https://github.com/yaml/pyyaml/issues/165
 
@@ -14,23 +14,23 @@ With this custom loader, it's possible to detect and raise an exception for dupl
 import yaml
 
 
-class YamlLoader(yaml.SafeLoader):  # pylint: disable=too-many-ancestors
-    """Custom YAML Loader to comply with the official YAML Spec"""
+class DuplicateKeysLoader(yaml.SafeLoader):  # pylint: disable=too-many-ancestors
+    """A custom YAML Loader to comply with the official YAML Spec"""
 
     def construct_mapping(self, node, deep=False) -> dict:
         """Create a YAML mapping node to avoid duplicates
 
-    Args:
-        self (SafeConstructor): the safe constructor to override the default loader
-        node (dict): The node representing a yaml part
-        deep (bool, optional): Flag to specify deep . Defaults to False.
+        Args:
+            self (SafeConstructor): the safe constructor to override the default loader
+            node (dict): The node representing a yaml part
+            deep (bool, optional): Flag to specify deep . Defaults to False.
 
-    Raises:
-        yaml.constructor.ConstructorError: [description]
+        Raises:
+            yaml.constructor.ConstructorError: An error if a duplicate key is found
 
-    Returns:
-        [type]: [description]
-    """
+        Returns:
+            dict: The representation of the yaml file as a dict
+        """
 
         self.flatten_mapping(node)
         result = {}
@@ -42,6 +42,6 @@ class YamlLoader(yaml.SafeLoader):  # pylint: disable=too-many-ancestors
         return result
 
 
-YamlLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, YamlLoader.construct_mapping,
+DuplicateKeysLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, DuplicateKeysLoader.construct_mapping,
 )
