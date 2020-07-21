@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 from tempfile import gettempdir
 from unittest import TestCase
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import nestor_api.lib.io as io
 
@@ -161,16 +161,14 @@ class TestIoLib(TestCase):
         content = io.read(sample_file_path)
         self.assertEqual(content, "sample file\n")
 
-    @patch("nestor_api.lib.io.yaml", autospec=True)
+    @patch("nestor_api.lib.io.yaml_lib", autospec=True)
     def test_read_yaml(self, yaml_mock):
-        with patch("nestor_api.lib.io.open", mock_open(read_data="key: value")) as open_mock:
-            yaml_mock.safe_load.return_value = {"key": "value"}
+        yaml_mock.load_yaml_from_path.return_value = {"key": "value"}
 
-            parsed_yaml = io.read_yaml("example.yml")
+        parsed_yaml = io.read_yaml("example.yml")
 
-            open_mock.assert_called_with("example.yml", "r")
-            yaml_mock.safe_load.assert_called_once_with("key: value")
-            self.assertEqual(parsed_yaml, {"key": "value"})
+        yaml_mock.load_yaml_from_path.assert_called_once_with("example.yml")
+        self.assertEqual(parsed_yaml, {"key": "value"})
 
     @patch("nestor_api.lib.io.os", autospec=True)
     @patch("nestor_api.lib.io.shutil", autospec=True)

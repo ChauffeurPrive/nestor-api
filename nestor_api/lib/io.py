@@ -11,6 +11,7 @@ import subprocess
 import yaml
 
 from nestor_api.config.config import Configuration
+import yaml_lib
 
 
 def convert_to_yaml(data: dict) -> str:
@@ -97,10 +98,7 @@ def read(file_path: str) -> str:
 
 def read_yaml(file_path: str) -> dict:
     """Returns a dictionary from yaml file path"""
-    with open(file_path, "r") as file_data:
-        yaml_data = file_data.read()
-
-    return yaml.safe_load(yaml_data)
+    return yaml_lib.load_yaml_from_path(file_path)
 
 
 def remove(file_path: str) -> None:

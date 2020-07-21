@@ -4,11 +4,11 @@ import os
 from pathlib import Path
 
 import jsonschema  # type: ignore
-import yaml
 
 from validator.config.config import Configuration, SupportedValidations
 from validator.errors.errors import InvalidTargetPathError
 from validator.schemas.schema import SCHEMAS
+import yaml_lib
 
 
 def is_yaml_file(file_name):
@@ -49,10 +49,8 @@ def validate_file(file_path: str, schema: dict) -> str:
     Returns:
         String: The validated file
     """
-    with open(file_path, "r") as file:
-        yaml_file_data = file.read()
-        yaml_file = yaml.safe_load(yaml_file_data)
-        return jsonschema.validate(yaml_file, schema)
+    yaml_file = yaml_lib.load_yaml_from_path(file_path)
+    return jsonschema.validate(yaml_file, schema)
 
 
 def validate_deployment_files():
