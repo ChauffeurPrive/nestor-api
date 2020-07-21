@@ -3,6 +3,7 @@
 from typing import Optional
 
 from nestor_api.config.probes import ProbesDefaultConfiguration
+import nestor_api.lib.docker as docker
 import yaml_lib
 
 
@@ -44,6 +45,19 @@ def get_anti_affinity_zone(app_config: dict, process_name: str, templates: dict)
         )
 
     return anti_affinity_zone
+
+
+def get_image_name(app_config, process_name, options):
+    """Returns the definitive image name"""
+    image_tag = options["tag"]
+    branch = options.get("branch")
+
+    if branch is not None:
+        image_tag = branch
+
+    app, _, _ = get_sanitized_names(app_config, process_name)
+
+    return docker.get_registry_image_tag(app, image_tag, app_config["registry"])
 
 
 def get_probes(probes_config: dict, port: int):
@@ -92,7 +106,24 @@ def get_sanitized_names(app_config: dict, process_name: str):
     return app, sanitized_process_name, metadata_name
 
 
-def get_variables(app_config: dict):
+def get_secret_variables(app_config) -> dict:
+    """Returns the secret variables from configuration"""
+    secret_variables = app_config.get("variables", {}).get("secret", {})
+
+    formatted_secret_variables = {
+        secret_name: {
+            "secretKeyRef": {
+                "name": secret_variables[secret_name]["name"],
+                "key": secret_variables[secret_name]["key"],
+            },
+        }
+        for secret_name in secret_variables.keys()
+    }
+
+    return formatted_secret_variables
+
+
+def get_variables(app_config: dict) -> dict:
     """Environment variables update to support the 2 level of definition
     - ope for operational environment variables
     - app for application level environment variables
