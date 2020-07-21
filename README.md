@@ -12,6 +12,17 @@ Dependencies are managed by [Pipenv](https://github.com/pypa/pipenv).
 pipenv sync # Add --dev to also install dev dependencies
 ```
 
+## Testing
+```bash
+pipenv run make test-all # To run the whole tests (incl. lint & mypy checks)
+pipenv run make test-all # To run unit tests only
+```
+
+## Starting the app
+```bash
+FLASK_APP='./nestor_api/api/wsgi.py' pipenv run flask run
+```
+
 ## Configuration
 
 > [Source](./nestor_api/config/config.py)
