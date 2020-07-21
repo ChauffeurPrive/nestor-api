@@ -66,26 +66,31 @@ class TestIoLib(TestCase):
 
     @patch("nestor_api.lib.io.subprocess.run", autospec=True)
     def test_execute(self, subprocess_run_mock):
+        subprocess_run_mock.return_value.returncode = 0
         subprocess_run_mock.return_value.stdout.decode.return_value = "some output\n"
 
         output = io.execute("a command with --arg1 arg-value")
 
         self.assertEqual(output, "some output")
         subprocess_run_mock.assert_called_with(
-            ["a", "command", "with", "--arg1", "arg-value"],
-            check=True,
-            cwd=None,
+            "a command with --arg1 arg-value",
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            cwd=None,
+            env=None,
+            shell=True,
+            check=False,
         )
 
     @patch("nestor_api.lib.io.subprocess.run", autospec=True)
     def test_execute_should_raise_if_failure(self, subprocess_run_mock):
-        exception = Exception("some exception")
-        subprocess_run_mock.side_effect = exception
-        with self.assertRaises(Exception) as context:
+        subprocess_run_mock.return_value.returncode = 1
+        subprocess_run_mock.return_value.stderr.decode.return_value = "An error message\n"
+
+        with self.assertRaises(RuntimeError) as context:
             io.execute("a command with --arg1 arg-value")
-        self.assertEqual(exception, context.exception)
+
+        self.assertEqual(str(context.exception), "An error message")
 
     @patch("nestor_api.lib.io.Path", autospec=True)
     def test_exists_existing_file(self, path_mock):
