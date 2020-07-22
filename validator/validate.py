@@ -54,7 +54,7 @@ def validate_file(file_path: str, schema: dict) -> str:
     return jsonschema.validate(yaml_file, schema)
 
 
-def validate_deployment_files():
+def validate_deployment_files() -> list:
     """Main validate function
 
     This function executes a specific validation configured with NESTOR_VALIDATION_TARGET

@@ -119,10 +119,10 @@ class TestValidateLibrary(unittest.TestCase):
     @patch("validator.validate.build_apps_path")
     @patch("validator.config.config.Configuration.get_validation_target")
     def test_validate_apps_with_errors(self, get_validation_target_mock, build_apps_path_mock):
-        real_config_fixture_path = Path(
+        config_fixture_path = Path(
             os.path.dirname(__file__), "..", "__fixtures__", "validator", "apps_with_errors"
         ).resolve()
-        build_apps_path_mock.return_value = real_config_fixture_path
+        build_apps_path_mock.return_value = config_fixture_path
         get_validation_target_mock.return_value = "APPLICATIONS"
 
         expected_error = "Found a duplicate key: app"
