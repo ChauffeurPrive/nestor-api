@@ -44,3 +44,10 @@ class TestConfig(TestCase):
 
     def test_get_config_default_branch_default(self):
         self.assertEqual(Configuration.get_config_default_branch(), "staging")
+
+    @patch.dict(os.environ, {"NESTOR_GIT_PROVIDER_TOKEN": "secret"})
+    def test_get_git_provider_token_configured(self):
+        self.assertEqual(Configuration.get_git_provider_token(), "secret")
+
+    def test_get_git_provider_token_default(self):
+        self.assertIsNone(Configuration.get_git_provider_token())

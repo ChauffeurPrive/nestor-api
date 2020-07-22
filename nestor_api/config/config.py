@@ -35,3 +35,8 @@ class Configuration:
     def get_working_path():
         """Returns the path of the project holding working copies"""
         return os.getenv("NESTOR_WORK_PATH", "/tmp/nestor/work")
+
+    @staticmethod
+    def get_git_provider_token():
+        """Returns the git provider token use to access provider APIs"""
+        return os.getenv("NESTOR_GIT_PROVIDER_TOKEN", None)
