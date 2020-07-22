@@ -47,7 +47,7 @@ def get_anti_affinity_zone(app_config: dict, process_name: str, templates: dict)
     return anti_affinity_zone
 
 
-def get_image_name(app_config, process_name, options):
+def get_image_name(app_config, options):
     """Returns the definitive image name"""
     image_tag = options["tag"]
     branch = options.get("branch")
@@ -55,9 +55,7 @@ def get_image_name(app_config, process_name, options):
     if branch is not None:
         image_tag = branch
 
-    app, _, _ = get_sanitized_names(app_config, process_name)
-
-    return docker.get_registry_image_tag(app, image_tag, app_config["registry"])
+    return docker.get_registry_image_tag(app_config["app"], image_tag, app_config["registry"])
 
 
 def get_probes(probes_config: dict, port: int):

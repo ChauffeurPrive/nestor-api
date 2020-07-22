@@ -133,14 +133,14 @@ class TestK8sBuilders(TestCase):
         """Returns the URL of the docker image if tag and branch are provided"""
         app_config = {"app": "app", "registry": {"organization": "my-organization"}}
         image_url = k8s_builders.get_image_name(
-            app_config, "web", {"branch": "feature/api", "tag": "1.0.0-sha-a2b3c4"}
+            app_config, {"branch": "feature/api", "tag": "1.0.0-sha-a2b3c4"}
         )
         self.assertEqual(image_url, "my-organization/app:feature/api")
 
     def test_get_image_name_tag(self):
         """Returns the URL of the docker image if only a tag is provided"""
         app_config = {"app": "app", "registry": {"organization": "my-organization"}}
-        image_url = k8s_builders.get_image_name(app_config, "web", {"tag": "1.0.0-sha-a2b3c4"})
+        image_url = k8s_builders.get_image_name(app_config, {"tag": "1.0.0-sha-a2b3c4"})
         self.assertEqual(image_url, "my-organization/app:1.0.0-sha-a2b3c4")
 
     def test_get_probes_both_configured(self):
