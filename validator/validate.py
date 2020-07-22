@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import jsonschema  # type: ignore
+from yaml.constructor import ConstructorError
 
 from validator.config.config import Configuration, SupportedValidations
 from validator.errors.errors import InvalidTargetPathError
@@ -53,7 +54,7 @@ def validate_file(file_path: str, schema: dict) -> str:
     return jsonschema.validate(yaml_file, schema)
 
 
-def validate_deployment_files():
+def validate_deployment_files() -> list:
     """Main validate function
 
     This function executes a specific validation configured with NESTOR_VALIDATION_TARGET
@@ -62,6 +63,9 @@ def validate_deployment_files():
     Raises:
         Exception: If the configuration path has not been configured.
         Exception: If the configuration path does not exist
+
+    Returns:
+        list: A list with errors, if empty there were no errors validating the files
     """
     apps_path = build_apps_path()
     if not Path(apps_path).exists():
@@ -69,6 +73,7 @@ def validate_deployment_files():
             f"{apps_path} does not look like a valid configuration path. Verify the path exists"
         )
 
+    errors = []
     validation_target = Configuration.get_validation_target()
 
     if validation_target == str(SupportedValidations.APPLICATIONS):
@@ -85,15 +90,22 @@ def validate_deployment_files():
 
         for file in files_in_dir:
             application_config_file_path = os.path.join(apps_path, file)
-            validate_file(application_config_file_path, SCHEMAS[validation_target])
+            try:
+                validate_file(application_config_file_path, SCHEMAS[validation_target])
+            except ConstructorError as validation_error:
+                errors.append(validation_error)
 
     elif validation_target == str(SupportedValidations.PROJECTS):
         # Validate project.yaml
         project_config_file_path = build_project_conf_path()
-        validate_file(project_config_file_path, SCHEMAS[validation_target])
-
+        try:
+            validate_file(project_config_file_path, SCHEMAS[validation_target])
+        except ConstructorError as validation_error:
+            errors.append(validation_error)
     else:
         raise Exception(
             "There is no configuration to be validated. "
             + "Be sure to define a valid NESTOR_VALIDATION_TARGET"
         )
+
+    return errors
