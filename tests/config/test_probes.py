@@ -5,7 +5,7 @@ from unittest.mock import patch
 from nestor_api.config.probes import ProbesDefaultConfiguration
 
 
-class TestConfig(TestCase):
+class TestProbesConfig(TestCase):
     @patch.dict(os.environ, {"NESTOR_PROBES_DEFAULT_DELAY": "2"})
     def test_get_default_delay_configured(self):
         self.assertEqual(ProbesDefaultConfiguration.get_default_delay(), 2)
