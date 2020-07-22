@@ -16,7 +16,6 @@ def _build_kubectl_env() -> dict:
     }
 
 
-# pylint: disable=bad-continuation
 def fetch_resource_configuration(
     cluster_name: str, namespace: str, app_name: str, resource_type: K8sResourceType
 ) -> dict:

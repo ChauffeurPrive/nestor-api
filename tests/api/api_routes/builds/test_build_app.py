@@ -10,7 +10,6 @@ def _mock_thread(target, args):
     return mock
 
 
-# pylint: disable=bad-continuation
 @patch("nestor_api.api.api_routes.builds.build_app.Thread", side_effect=_mock_thread)
 @patch("nestor_api.api.api_routes.builds.build_app.Logger", autospec=True)
 @patch("nestor_api.api.api_routes.builds.build_app.app", autospec=True)
