@@ -33,7 +33,6 @@ class TestConfigLibrary(unittest.TestCase):
     @patch("yaml_lib.read_yaml", autospec=True)
     @patch("nestor_api.lib.config.get_project_config", autospec=True)
     @patch("nestor_api.lib.config.Configuration", autospec=True)
-    # pylint: disable=bad-continuation
     def test_get_app_config(
         self, configuration_mock, get_project_config_mock, read_yaml_mock, io_mock
     ):

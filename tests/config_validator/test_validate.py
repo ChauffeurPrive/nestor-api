@@ -1,5 +1,3 @@
-# pylint: disable=bad-continuation
-
 import os
 from pathlib import Path
 import unittest
@@ -78,8 +76,9 @@ class TestValidateLibrary(unittest.TestCase):
         get_validation_target_mock.return_value = "SOME_VALUE"
 
         with self.assertRaisesRegex(
-            Exception,  # pylint: disable=bad-continuation
-            "There is no configuration to be validated. Be sure to define a valid NESTOR_VALIDATION_TARGET",  # pylint: disable=bad-continuation,line-too-long
+            Exception,
+            # pylint: disable=line-too-long
+            "There is no configuration to be validated. Be sure to define a valid NESTOR_VALIDATION_TARGET",
         ):
             config_validator.validate_deployment_files()
 
