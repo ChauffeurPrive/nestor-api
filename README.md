@@ -27,3 +27,4 @@ pipenv sync # Add --dev to also install dev dependencies
 |    `NESTOR_PROBES_DEFAULT_DELAY` | `30`                   | `seconds` | Default delay for probes if not configured                  |
 |   `NESTOR_PROBES_DEFAULT_PERIOD` | `10`                   | `seconds` | Default period for probes if not configured                 |
 |  `NESTOR_PROBES_DEFAULT_TIMEOUT` | `1`                    | `seconds` | Default timeout for probes if not configured                |
+|          `NESTOR_K8S_HTTP_PROXY` |                        | `URL`     | The kubernetes HTTP_PROXY                                   |

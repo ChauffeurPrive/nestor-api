@@ -2,18 +2,19 @@ import os
 from unittest import TestCase
 from unittest.mock import patch
 
-import nestor_api.lib.kubectl as kubectl
+import nestor_api.lib.k8s.cli as cli
+from nestor_api.lib.k8s.enums.k8s_resource_type import K8sResourceType
 
 
-class TestKubectl(TestCase):
-    @patch("nestor_api.lib.kubectl.KubernetesConfiguration")
-    @patch("nestor_api.lib.kubectl.io")
+class TestK8sCli(TestCase):
+    @patch("nestor_api.lib.k8s.cli.K8sConfiguration")
+    @patch("nestor_api.lib.k8s.cli.io")
     def test_fetch_resource_configuration_deployment(self, io_mock, config_mock):
         config_mock.get_http_proxy.return_value = "k8s-proxy.my-domain.com"
         io_mock.execute.return_value = '{"key": "value"}'
 
-        result = kubectl.fetch_resource_configuration(
-            "cluster", "namespace", "app", kubectl.KubernetesResourceType.DEPLOYMENT
+        result = cli.fetch_resource_configuration(
+            "cluster", "namespace", "my-app", K8sResourceType.DEPLOYMENT
         )
 
         self.assertEqual(result, {"key": "value"})
@@ -24,7 +25,7 @@ class TestKubectl(TestCase):
                 "--namespace namespace "
                 "get deployment "
                 "--output=json "
-                "--selector app=app"
+                "--selector app=my-app"
             ),
-            env={**os.environ, "HTTP_PROXY": "k8s-proxy.my-domain.com",},
+            env={**os.environ, "HTTP_PROXY": "k8s-proxy.my-domain.com"},
         )

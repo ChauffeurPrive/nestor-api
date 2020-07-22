@@ -1,12 +1,12 @@
-"""Nestor-api kubernetes configuration"""
+"""Nestor-api k8s configuration"""
 import os
 
 
 # pylint: disable=too-few-public-methods
-class KubernetesConfiguration:
-    """Kubernetes configuration"""
+class K8sConfiguration:
+    """k8s configuration"""
 
     @staticmethod
     def get_http_proxy() -> str:
-        """Returns the kubernetes http proxy"""
+        """Returns the k8s http proxy"""
         return os.environ["NESTOR_K8S_HTTP_PROXY"]
