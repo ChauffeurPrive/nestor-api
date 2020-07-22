@@ -129,6 +129,20 @@ class TestK8sBuilders(TestCase):
         )
         self.assertEqual(anti_affinity_zone, k8s_fixtures.anti_affinity_zone)
 
+    def test_get_image_name_branch(self):
+        """Returns the URL of the docker image if tag and branch are provided"""
+        app_config = {"app": "app", "registry": {"organization": "my-organization"}}
+        image_url = k8s_builders.get_image_name(
+            app_config, {"branch": "feature/api", "tag": "1.0.0-sha-a2b3c4"}
+        )
+        self.assertEqual(image_url, "my-organization/app:feature/api")
+
+    def test_get_image_name_tag(self):
+        """Returns the URL of the docker image if only a tag is provided"""
+        app_config = {"app": "app", "registry": {"organization": "my-organization"}}
+        image_url = k8s_builders.get_image_name(app_config, {"tag": "1.0.0-sha-a2b3c4"})
+        self.assertEqual(image_url, "my-organization/app:1.0.0-sha-a2b3c4")
+
     def test_get_probes_both_configured(self):
         """Check that the configuration of probes is correct if both configured"""
         probes = k8s_builders.get_probes(
@@ -246,6 +260,27 @@ class TestK8sBuilders(TestCase):
         self.assertEqual(app, "app")
         self.assertEqual(sanitized_process_name, "my-web-process")
         self.assertEqual(metadata_name, "app----my-web-process")
+
+    def test_get_secret_variables(self):
+        """Merge both app and ope variables"""
+        app_config = {
+            "variables": {
+                "secret": {
+                    "SECRET_USERNAME": {"name": "mysecret", "key": "username"},
+                    "SECRET_PASSWORD": {"name": "mysecret", "key": "password",},
+                }
+            }
+        }
+
+        variables = k8s_builders.get_secret_variables(app_config)
+
+        self.assertEqual(
+            variables,
+            {
+                "SECRET_PASSWORD": {"secretKeyRef": {"key": "password", "name": "mysecret",}},
+                "SECRET_USERNAME": {"secretKeyRef": {"key": "username", "name": "mysecret",}},
+            },
+        )
 
     def test_get_variables(self):
         """Merge both app and ope variables"""
