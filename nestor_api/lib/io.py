@@ -44,11 +44,21 @@ def ensure_dir(directory_path: str) -> None:
     Path(directory_path).mkdir(parents=True, exist_ok=True)
 
 
-def execute(command: str, cwd: str = None) -> str:
+def execute(command: str, cwd: str = None, env: dict = None) -> str:
     """Executes a command and returns the stdout from it"""
     result = subprocess.run(
-        command.split(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True, cwd=cwd,
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd,
+        env=env,
+        shell=True,
+        check=False,
     )
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8").rstrip()
+        raise RuntimeError(stderr)
+
     return result.stdout.decode("utf-8").rstrip()
 
 
