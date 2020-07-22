@@ -47,14 +47,9 @@ def get_anti_affinity_zone(app_config: dict, process_name: str, templates: dict)
     return anti_affinity_zone
 
 
-def get_image_name(app_config, options):
+def get_image_name(app_config: dict, options: dict):
     """Returns the definitive image name"""
-    image_tag = options["tag"]
-    branch = options.get("branch")
-
-    if branch is not None:
-        image_tag = branch
-
+    image_tag = options["branch"] if "branch" in options else options["tag"]
     return docker.get_registry_image_tag(app_config["app"], image_tag, app_config["registry"])
 
 
@@ -79,7 +74,7 @@ def get_probes(probes_config: dict, port: int):
 
     for probe_to_configure in probes_to_configure:
         probe = {
-            "httpGet": {"path": probe_to_configure["config"]["path"], "port": port,},
+            "httpGet": {"path": probe_to_configure["config"]["path"], "port": port},
             "initialDelaySeconds": probe_to_configure["config"].get(
                 "delay", ProbesDefaultConfiguration.get_default_delay(),
             ),
@@ -104,7 +99,7 @@ def get_sanitized_names(app_config: dict, process_name: str):
     return app, sanitized_process_name, metadata_name
 
 
-def get_secret_variables(app_config) -> dict:
+def get_secret_variables(app_config: dict) -> dict:
     """Returns the secret variables from configuration"""
     secret_variables = app_config.get("variables", {}).get("secret", {})
 
