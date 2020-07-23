@@ -9,11 +9,38 @@ class TestK8sBuilders(TestCase):
     def compiled_templates_mock(self):
         """To mock compiled templates (with handlebars)"""
 
-        def compiled_templates(parameters):
+        def check_anti_affinity_node_template(parameters):
             self.assertEqual(parameters, {"app": "app", "process": "web"})
-            return {"mock": "template"}
+            return "mock: template_anti_affinity_node"
 
-        return compiled_templates
+        def check_anti_affinity_zone_template(parameters):
+            self.assertEqual(parameters, {"app": "app", "process": "web"})
+            return "mock: template_anti_affinity_zone"
+
+        def check_hpa(parameters):
+            self.assertEqual(
+                parameters,
+                {
+                    "app": "app",
+                    "process": "web",
+                    "name": "app----web",
+                    "minReplicas": 5,
+                    "maxReplicas": 15,
+                    "targetCPUUtilizationPercentage": 90,
+                },
+            )
+            return "mock: template_hpa"
+
+        def check_namespace(parameters):
+            self.assertEqual(parameters, {"name": "namespace"})
+            return "mock: template_namespace"
+
+        return {
+            "anti_affinity_node": check_anti_affinity_node_template,
+            "anti_affinity_zone": check_anti_affinity_zone_template,
+            "hpa": check_hpa,
+            "namespace": check_namespace,
+        }
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_not_enabled_default(self, parse_yaml_mock):
@@ -22,7 +49,7 @@ class TestK8sBuilders(TestCase):
         anti_affinity_node = k8s_builders.get_anti_affinity_node(
             {"app": "app", "affinity": {"default": {"is_anti_affinity_node_enabled": False}}},
             "web",
-            {"anti_affinity_node": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
 
         self.assertEqual(anti_affinity_node, None)
@@ -40,7 +67,7 @@ class TestK8sBuilders(TestCase):
                 },
             },
             "web",
-            {"anti_affinity_node": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
         self.assertEqual(anti_affinity_node, None)
 
@@ -51,7 +78,7 @@ class TestK8sBuilders(TestCase):
         anti_affinity_node = k8s_builders.get_anti_affinity_node(
             {"app": "app", "affinity": {"default": {"is_anti_affinity_node_enabled": True}}},
             "web",
-            {"anti_affinity_node": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
         self.assertEqual(anti_affinity_node, k8s_fixtures.anti_affinity_node)
 
@@ -68,7 +95,7 @@ class TestK8sBuilders(TestCase):
                 },
             },
             "web",
-            {"anti_affinity_node": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
         self.assertEqual(anti_affinity_node, k8s_fixtures.anti_affinity_node)
 
@@ -79,7 +106,7 @@ class TestK8sBuilders(TestCase):
         anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
             {"app": "app", "affinity": {"default": {"is_anti_affinity_zone_enabled": False}}},
             "web",
-            {"anti_affinity_zone": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
 
         self.assertEqual(anti_affinity_zone, None)
@@ -97,7 +124,7 @@ class TestK8sBuilders(TestCase):
                 },
             },
             "web",
-            {"anti_affinity_zone": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
         self.assertEqual(anti_affinity_zone, None)
 
@@ -108,7 +135,7 @@ class TestK8sBuilders(TestCase):
         anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
             {"app": "app", "affinity": {"default": {"is_anti_affinity_zone_enabled": True}}},
             "web",
-            {"anti_affinity_zone": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
         self.assertEqual(anti_affinity_zone, k8s_fixtures.anti_affinity_zone)
 
@@ -125,7 +152,7 @@ class TestK8sBuilders(TestCase):
                 },
             },
             "web",
-            {"anti_affinity_zone": self.compiled_templates_mock()},
+            self.compiled_templates_mock(),
         )
         self.assertEqual(anti_affinity_zone, k8s_fixtures.anti_affinity_zone)
 
@@ -147,8 +174,8 @@ class TestK8sBuilders(TestCase):
         """Check that the configuration of probes is correct if both configured"""
         probes = k8s_builders.get_probes(
             {
-                "liveness": {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1,},
-                "readiness": {"path": "/api/heartbeat", "delay": 10, "period": 10, "timeout": 2,},
+                "liveness": {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1},
+                "readiness": {"path": "/api/heartbeat", "delay": 10, "period": 10, "timeout": 2},
             },
             8080,
         )
@@ -174,7 +201,7 @@ class TestK8sBuilders(TestCase):
     def test_get_probes_liveness_only(self):
         """Check that the configuration of probes is correct if only liveness configured"""
         probes = k8s_builders.get_probes(
-            {"liveness": {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1,},}, 8080
+            {"liveness": {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1}}, 8080
         )
 
         self.assertEqual(
@@ -192,7 +219,7 @@ class TestK8sBuilders(TestCase):
     def test_get_probes_readiness_only(self):
         """Check that the configuration of probes is correct if only readiness configured"""
         probes = k8s_builders.get_probes(
-            {"readiness": {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1,},}, 8080
+            {"readiness": {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1}}, 8080
         )
 
         self.assertEqual(
@@ -210,7 +237,7 @@ class TestK8sBuilders(TestCase):
     def test_get_probes_unique_config_for_both(self):
         """Check that the configuration of probes is correct if configuration is unique for both"""
         probes = k8s_builders.get_probes(
-            {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1,}, 8080
+            {"path": "/api/heartbeat", "delay": 5, "period": 5, "timeout": 1}, 8080
         )
 
         self.assertEqual(
@@ -267,7 +294,7 @@ class TestK8sBuilders(TestCase):
             "variables": {
                 "secret": {
                     "SECRET_USERNAME": {"name": "mysecret", "key": "username"},
-                    "SECRET_PASSWORD": {"name": "mysecret", "key": "password",},
+                    "SECRET_PASSWORD": {"name": "mysecret", "key": "password"},
                 }
             }
         }
@@ -277,8 +304,8 @@ class TestK8sBuilders(TestCase):
         self.assertEqual(
             variables,
             {
-                "SECRET_PASSWORD": {"secretKeyRef": {"key": "password", "name": "mysecret",}},
-                "SECRET_USERNAME": {"secretKeyRef": {"key": "username", "name": "mysecret",}},
+                "SECRET_PASSWORD": {"secretKeyRef": {"key": "password", "name": "mysecret"}},
+                "SECRET_USERNAME": {"secretKeyRef": {"key": "username", "name": "mysecret"}},
             },
         )
 
@@ -286,13 +313,272 @@ class TestK8sBuilders(TestCase):
         """Merge both app and ope variables"""
         app_config = {
             "variables": {
-                "app": {"VARIABLE_1": "1111", "VARIABLE_2": "2222",},
-                "ope": {"VARIABLE_2": "3333", "VARIABLE_3": "4444",},
+                "app": {"VARIABLE_1": "1111", "VARIABLE_2": "2222"},
+                "ope": {"VARIABLE_2": "3333", "VARIABLE_3": "4444"},
             }
         }
 
         variables = k8s_builders.get_variables(app_config)
 
         self.assertEqual(
-            variables, {"VARIABLE_1": "1111", "VARIABLE_2": "3333", "VARIABLE_3": "4444",}
+            variables, {"VARIABLE_1": "1111", "VARIABLE_2": "3333", "VARIABLE_3": "4444"}
+        )
+
+    def test_set_namespace_no_namespace(self):
+        """Return None if no namespace in config and should not modify resources definition"""
+        app_config = {}
+        resources = [
+            {"metadata": {"name": "hpa"}},
+            {"metadata": {"name": "deployment"}},
+        ]
+
+        namespace = k8s_builders.set_namespace(
+            app_config, resources, self.compiled_templates_mock()
+        )
+
+        self.assertEqual(namespace, None)
+        self.assertEqual(
+            resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}},]
+        )
+
+    @patch("yaml_lib.parse_yaml", autospec=True)
+    def test_set_namespace_with_namespace(self, parse_yaml_mock):
+        """Return namespace and should modify resources definition"""
+        parse_yaml_mock.return_value = k8s_fixtures.namespace
+
+        app_config = {"namespace": "namespace"}
+        resources = [
+            {"metadata": {"name": "hpa"}},
+            {"metadata": {"name": "deployment"}},
+        ]
+
+        namespace = k8s_builders.set_namespace(
+            app_config, resources, self.compiled_templates_mock()
+        )
+
+        self.assertEqual(namespace, k8s_fixtures.namespace)
+        self.assertEqual(
+            resources,
+            [
+                {"metadata": {"name": "hpa", "namespace": "namespace"}},
+                {"metadata": {"name": "deployment", "namespace": "namespace"}},
+            ],
+        )
+
+    def test_set_replicas_min_replicas_zero(self):
+        """Return None and set replicas to 0 in the recipe"""
+        app_config = {"app": "app", "scales": {"web": {"minReplicas": 0}}}
+        recipe = {"spec": {}}
+        hpa = k8s_builders.set_replicas(app_config, "web", recipe, self.compiled_templates_mock())
+        self.assertEqual(hpa, None)
+        self.assertEqual(recipe, {"spec": {"replicas": 0}})
+
+    @patch("yaml_lib.parse_yaml", autospec=True)
+    def test_set_replicas_with_process_default(self, parse_yaml_mock):
+        """Return the hpa configuration"""
+        parse_yaml_mock.return_value = k8s_fixtures.hpa
+
+        app_config = {
+            "app": "app",
+            "scales": {
+                "default": {
+                    "minReplicas": 5,
+                    "maxReplicas": 15,
+                    "targetCPUUtilizationPercentage": 90,
+                },
+            },
+        }
+        recipe = {"spec": {}}
+
+        hpa = k8s_builders.set_replicas(app_config, "web", recipe, self.compiled_templates_mock())
+
+        self.assertEqual(hpa, k8s_fixtures.hpa)
+
+    @patch("yaml_lib.parse_yaml", autospec=True)
+    def test_set_replicas_with_process_configuration(self, parse_yaml_mock):
+        """Return the hpa configuration"""
+        parse_yaml_mock.return_value = k8s_fixtures.hpa
+
+        app_config = {
+            "app": "app",
+            "scales": {
+                "default": {
+                    "minReplicas": 3,
+                    "maxReplicas": 9,
+                    "targetCPUUtilizationPercentage": 80,
+                },
+                "web": {"minReplicas": 5, "maxReplicas": 15, "targetCPUUtilizationPercentage": 90},
+            },
+        }
+        recipe = {"spec": {}}
+
+        hpa = k8s_builders.set_replicas(app_config, "web", recipe, self.compiled_templates_mock())
+
+        self.assertEqual(hpa, k8s_fixtures.hpa)
+
+    def test_set_resources_no_resources_default(self):
+        """Should not set resources if none are configured"""
+        app_config = {}
+        recipe = {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {"name": "app----web"},
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "app",
+                                "image": "my-organization/app:1.0.0-sha-a1b2c3d",
+                                "imagePullPolicy": "Always",
+                                "env": [{"name": "MESSAGE", "value": "hello world"}],
+                            }
+                        ],
+                    }
+                }
+            },
+        }
+
+        k8s_builders.set_resources(app_config, "web", recipe)
+        self.assertEqual(
+            recipe,
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": "app----web",},
+                "spec": {
+                    "template": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "name": "app",
+                                    "image": "my-organization/app:1.0.0-sha-a1b2c3d",
+                                    "imagePullPolicy": "Always",
+                                    "env": [{"name": "MESSAGE", "value": "hello world"}],
+                                }
+                            ],
+                        }
+                    }
+                },
+            },
+        )
+
+    def test_set_resources_configured_default(self):
+        """Should set default resources configured"""
+        app_config = {
+            "resources": {
+                "default": {
+                    "requests": {"memory": "256Mi", "cpu": 0.1},
+                    "limits": {"memory": "1024Mi", "cpu": 1},
+                }
+            }
+        }
+        recipe = {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {"name": "app----web",},
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "app",
+                                "image": "my-organization/app:1.0.0-sha-a1b2c3d",
+                                "imagePullPolicy": "Always",
+                                "env": [{"name": "MESSAGE", "value": "hello world"}],
+                            }
+                        ],
+                    }
+                }
+            },
+        }
+
+        k8s_builders.set_resources(app_config, "web", recipe)
+        self.assertEqual(
+            recipe,
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": "app----web",},
+                "spec": {
+                    "template": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "name": "app",
+                                    "image": "my-organization/app:1.0.0-sha-a1b2c3d",
+                                    "imagePullPolicy": "Always",
+                                    "env": [{"name": "MESSAGE", "value": "hello world"}],
+                                    "resources": {
+                                        "requests": {"memory": "256Mi", "cpu": 0.1},
+                                        "limits": {"memory": "1024Mi", "cpu": 1},
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                },
+            },
+        )
+
+    def test_set_resources_configured_process(self):
+        """Should set resources configured for the process"""
+        app_config = {
+            "resources": {
+                "default": {
+                    "requests": {"memory": "256Mi", "cpu": 0.1},
+                    "limits": {"memory": "1024Mi", "cpu": 1},
+                },
+                "web": {
+                    "requests": {"memory": "512Mi", "cpu": 0.2},
+                    "limits": {"memory": "2048Mi", "cpu": 2},
+                },
+            }
+        }
+        recipe = {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {"name": "app----web",},
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "app",
+                                "image": "my-organization/app:1.0.0-sha-a1b2c3d",
+                                "imagePullPolicy": "Always",
+                                "env": [{"name": "MESSAGE", "value": "hello world"}],
+                            }
+                        ],
+                    }
+                }
+            },
+        }
+
+        k8s_builders.set_resources(app_config, "web", recipe)
+        self.assertEqual(
+            recipe,
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": "app----web",},
+                "spec": {
+                    "template": {
+                        "spec": {
+                            "containers": [
+                                {
+                                    "name": "app",
+                                    "image": "my-organization/app:1.0.0-sha-a1b2c3d",
+                                    "imagePullPolicy": "Always",
+                                    "env": [{"name": "MESSAGE", "value": "hello world"}],
+                                    "resources": {
+                                        "requests": {"memory": "512Mi", "cpu": 0.2},
+                                        "limits": {"memory": "2048Mi", "cpu": 2},
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                },
+            },
         )

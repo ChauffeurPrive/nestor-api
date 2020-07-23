@@ -3,6 +3,7 @@
 from typing import Optional
 
 from nestor_api.config.probes import ProbesDefaultConfiguration
+from nestor_api.config.replicas import ReplicasDefaultConfiguration
 import nestor_api.lib.docker as docker
 import yaml_lib
 
@@ -130,3 +131,67 @@ def get_variables(app_config: dict) -> dict:
         **app_variables,
         **ope_variables,
     }
+
+
+def set_namespace(app_config: dict, resources: list, templates: dict) -> Optional[dict]:
+    """Attach the expected namespace to the deployment and return the namespace"""
+    namespace = None
+    namespace_name = app_config.get("namespace")
+
+    if namespace_name is not None:
+        for resource in resources:
+            resource["metadata"]["namespace"] = namespace_name
+        namespace = yaml_lib.parse_yaml(templates["namespace"]({"name": namespace_name}),)
+
+    return namespace
+
+
+# pylint: disable=bad-continuation
+def set_replicas(
+    app_config: dict, process_name: str, recipe: dict, templates: dict
+) -> Optional[dict]:
+    """Attach the correct Replicas values to the recipe object and return the corresponding
+    `hpa` if applicable"""
+    scales = app_config["scales"]
+    scales_config = scales[process_name] if process_name in scales else scales["default"]
+    min_replicas = scales_config.get(
+        "minReplicas", ReplicasDefaultConfiguration.get_default_min_replicas()
+    )
+    max_replicas = scales_config.get(
+        "maxReplicas", ReplicasDefaultConfiguration.get_default_max_replicas()
+    )
+    target_cpu_utilization_percentage = scales_config.get(
+        "targetCPUUtilizationPercentage",
+        ReplicasDefaultConfiguration.get_default_target_cpu_utilization_percentage(),
+    )
+
+    if min_replicas == 0:
+        recipe["spec"]["replicas"] = 0
+        return None
+
+    # Create the HorizontalPodAutoscaler for this deployment
+
+    app, sanitized_process_name, metadata_name = get_sanitized_names(app_config, process_name)
+
+    template_vars = {
+        "app": app,
+        "process": sanitized_process_name,
+        "name": metadata_name,
+        "minReplicas": min_replicas,
+        "maxReplicas": max_replicas,
+        "targetCPUUtilizationPercentage": target_cpu_utilization_percentage,
+        **app_config.get("templateVars", {}),
+    }
+
+    return yaml_lib.parse_yaml(templates["hpa"](template_vars))
+
+
+def set_resources(app_config: dict, process_name: str, recipe: dict) -> None:
+    """Attach the expected resources to the kubernetes recipe"""
+    resources = app_config.get("resources", {})
+    resources_config = (
+        resources[process_name] if process_name in resources else resources.get("default")
+    )
+
+    if resources_config is not None:
+        recipe["spec"]["template"]["spec"]["containers"][0]["resources"] = resources_config
