@@ -1,4 +1,4 @@
-"""A simple logger implementation awaiting for proper implementation"""
+"""A simple logger implementation using native logging from Python"""
 
 import json
 import logging
@@ -11,10 +11,10 @@ logging.basicConfig(
 
 
 class Logger:
-    """A logger module"""
+    """A logger module with contextual information"""
 
     @staticmethod
-    def debug(context=None, message=""):
+    def debug(context=None, message="") -> None:
         """Produce a log with debug level
 
         Args:
@@ -27,7 +27,7 @@ class Logger:
             logging.debug("%s %s", message, json.dumps(context))
 
     @staticmethod
-    def info(context=None, message=""):
+    def info(context=None, message="") -> None:
         """Produce a log with info level
 
         Args:
@@ -40,7 +40,7 @@ class Logger:
             logging.info("%s %s", message, json.dumps(context))
 
     @staticmethod
-    def warn(context=None, message=""):
+    def warn(context=None, message="") -> None:
         """Produce a log with warn level
 
         Args:
@@ -53,7 +53,7 @@ class Logger:
             logging.warning("%s %s", message, json.dumps(context))
 
     @staticmethod
-    def error(context=None, message=""):
+    def error(context=None, message="") -> None:
         """Produce a log with error level
 
         Args:
