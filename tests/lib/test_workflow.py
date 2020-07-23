@@ -108,15 +108,15 @@ class TestWorkflow(TestCase):
         self.assertEqual(io_mock.remove.call_count, 3)
         self.assertEqual(result, {"app1": True, "app2": True, "app3": False})
 
-    def test_get_previous_step_with_previous_step(self):
-        """Should answer with the previous step."""
+    def test_get_previous_step_with_existing_previous_step(self):
+        """Should return the previous step."""
         previous_step = workflow.get_previous_step(
             {"workflow": ["step1", "step2", "step3"]}, "step2"
         )
         self.assertEqual(previous_step, "step1")
 
     def test_get_previous_step_without_previous_step(self):
-        """Should answer with None as the previous step does not exist."""
+        """Should return None as the previous step does not exist."""
         previous_step = workflow.get_previous_step(
             {"workflow": ["step1", "step2", "step3"]}, "step1"
         )
@@ -126,6 +126,21 @@ class TestWorkflow(TestCase):
         """Should raise an error if config is malformed."""
         with self.assertRaises(KeyError):
             workflow.get_previous_step({}, "step1")
+
+    def test_get_next_step_with_existing_next_step(self):
+        """Should return the next step."""
+        next_step = workflow.get_next_step({"workflow": ["step1", "step2", "step3"]}, "step2")
+        self.assertEqual(next_step, "step3")
+
+    def test_get_next_step_without_next_step(self):
+        """Should return None as the next step does not exist."""
+        next_step = workflow.get_next_step({"workflow": ["step1", "step2", "step3"]}, "step3")
+        self.assertIsNone(next_step)
+
+    def test_get_next_step_raises_error_with_incorrect_config(self):
+        """Should raise an error if config is malformed."""
+        with self.assertRaises(KeyError):
+            workflow.get_next_step({}, "step1")
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
     @patch("nestor_api.lib.workflow.io")

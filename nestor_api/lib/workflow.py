@@ -76,9 +76,19 @@ def are_step_hashes_equal(app_dir: str, branch1: str, branch2: str) -> bool:
 
 def get_previous_step(project_config: dict, target: str) -> Optional[str]:
     """ Returns the previous step in the defined workflow."""
-    index = project_config["workflow"].index(target)
+    workflow = project_config["workflow"] if project_config else []
+    index = workflow.index(target)
     if index > 0:
         return project_config["workflow"][index - 1]
+    return None
+
+
+def get_next_step(project_config: dict, target: str) -> Optional[str]:
+    """ Returns the next step in the defined workflow."""
+    workflow = project_config["workflow"] if project_config else []
+    index = workflow.index(target)
+    if index < (len(workflow) - 1):
+        return project_config["workflow"][index + 1]
     return None
 
 
@@ -186,3 +196,47 @@ def _create_and_protect_branch(
 def _get_workflow_branches(app_config: Dict, master_tag: str) -> List[str]:
     workflow_from_conf = app_config["workflow"] if "workflow" in app_config else []
     return [branch_name for branch_name in workflow_from_conf if branch_name != master_tag]
+
+
+def progress_workflow(app_config, app_name, app_dir, tag, current_step) -> str:
+    next_step = get_next_step(app_config, current_step)
+    if tag == "":
+        git.branch(app_dir, current_step)
+        tag = git.get_last_tag(app_dir)
+
+    git.branch(app_dir, next_step)
+    git.rebase(app_dir, tag)
+    git.push(app_dir)
+
+    processes = config.get_processes(app_config)
+    cronjobs = config.get_cronjobs(app_config)
+
+    # TODO Unused but should be inserted in MongoDB.
+    #  We should find a solution to retrieve it on the "other side"
+    application = {
+        "name": app_name,
+        "step": next_step,
+        "tag": tag,
+        "proc_file": processes,
+        "cron_file": cronjobs,
+    }
+    return next_step
+
+
+def advance_workflow_app(app_name: str, config_dir: str, tag: str, workflow_step: str):
+    """Advance the workflow af an application to the next step"""
+    git_url = config.get("git", {}).get("origin")
+    app_dir = git.create_working_repository(app_name, git_url)
+    app_config = config.get_app_config(app_name, config_dir)
+
+    Logger.info(
+        {"app": app_name, "tag": tag, "workflow_step": workflow_step},
+        "Advance to the next workflow step",
+    )
+
+    next_step = progress_workflow(app_config, app_name, app_dir, tag, workflow_step)
+
+    # TODO How to deal with those specific lines :
+    #  https://github.com/transcovo/nestor-api/blob/master/src/processes/web/api/workflow/index.js#L165
+
+    return app_dir
