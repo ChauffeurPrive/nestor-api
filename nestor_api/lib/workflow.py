@@ -48,15 +48,25 @@ def are_step_hashes_equal(app_dir: str, branch1: str, branch2: str) -> bool:
 
 
 def get_previous_step(project_config: dict, target: str) -> Optional[str]:
-    """ Returns the previous step in the defined workflow """
-    index = project_config["workflow"].index(target)
+    """ Returns the previous step in the defined workflow."""
+    workflow = project_config["workflow"] if project_config else []
+    index = workflow.index(target)
     if index > 0:
         return project_config["workflow"][index - 1]
     return None
 
 
+def get_next_step(project_config: dict, target: str) -> Optional[str]:
+    """ Returns the next step in the defined workflow."""
+    workflow = project_config["workflow"] if project_config else []
+    index = workflow.index(target)
+    if index < (len(workflow) - 1):
+        return project_config["workflow"][index + 1]
+    return None
+
+
 def init_workflow(
-        organization: str, app_name: str, git_provider: AbstractGitProvider
+    organization: str, app_name: str, git_provider: AbstractGitProvider
 ) -> Tuple[str, Dict[str, Dict[str, Tuple[bool, bool]]]]:
     """Initialize workflow for a given repo by creating all workflow branches.
     This function is idempotent which means it will not try to recreate a
@@ -117,7 +127,7 @@ def init_workflow(
         return status, branches
     except GitProviderError as err:
         Logger.error(
-            {"organization": organization, "app_name": app_name, "err": err, },
+            {"organization": organization, "app_name": app_name, "err": err,},
             "Fail to initialize workflow",
         )
         raise Exception("Fail to initialize workflow")
@@ -125,12 +135,12 @@ def init_workflow(
 
 # pylint: disable=too-many-arguments
 def _create_and_protect_branch(
-        organization: str,
-        app_name: str,
-        branch_name: str,
-        master_sha: str,
-        user_login: str,
-        git_provider: AbstractGitProvider,
+    organization: str,
+    app_name: str,
+    branch_name: str,
+    master_sha: str,
+    user_login: str,
+    git_provider: AbstractGitProvider,
 ) -> Dict[str, Tuple[bool, bool]]:
     """Try to create and protect a branch on a repository"""
     report = {}
@@ -144,10 +154,22 @@ def _create_and_protect_branch(
         report["created"] = (True, True)
 
     if branch.protected is True:
-        Logger.info({"branch_name": branch_name}, "Branch is already protected. Skipped protection.")
+        Logger.info(
+            {"branch_name": branch_name}, "Branch is already protected. Skipped protection."
+        )
         report["protected"] = (False, True)
     else:
         git_provider.protect_branch(organization, app_name, branch_name, user_login)
         Logger.info({"branch_name": branch_name}, "Branch protected")
         report["protected"] = (True, True)
     return report
+
+
+def progress_workflow(app_config, app_name, app_dir, tag, current_step):
+    next_step = get_next_step(app_config, current_step)
+    if tag == "":
+        tag = applications.get_last_tag_app(app_name, current_step)
+
+    git.branch(app_dir, next_step)
+    git.rebase(app_dir, tag)
+    git.push(app_dir)
