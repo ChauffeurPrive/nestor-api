@@ -43,7 +43,10 @@ class GitHubGitProvider(AbstractGitProvider):
         try:
             repository = self.__client.get_repo(f"{organization}/{app_name}")
             repository.create_git_ref(f"refs/heads/{branch_name}", ref)
-            return self.get_branch(organization, app_name, branch_name)
+            branch = self.get_branch(organization, app_name, branch_name)
+            if branch is None:
+                raise GitProviderError("Could not retrieve branch after ref creation")
+            return branch
         except GithubException:
             raise GitProviderError()
 
@@ -54,7 +57,7 @@ class GitHubGitProvider(AbstractGitProvider):
         try:
             branch = self.get_branch(organization, app_name, branch_name)
             if branch is None:
-                raise Exception("Branch not found")
+                raise GitProviderError("Branch not found")
             branch.edit_protection(enforce_admins=False, user_push_restrictions=[user_login])
         except GithubException:
             raise GitProviderError()
