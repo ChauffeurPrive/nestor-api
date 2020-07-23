@@ -11,11 +11,11 @@ class TestK8sBuilders(TestCase):
 
         def check_anti_affinity_node_template(parameters):
             self.assertEqual(parameters, {"app": "app", "process": "web"})
-            return {"mock: template_anti_affinity_node"}
+            return "mock: template_anti_affinity_node"
 
         def check_anti_affinity_zone_template(parameters):
             self.assertEqual(parameters, {"app": "app", "process": "web"})
-            return {"mock: template_anti_affinity_zone"}
+            return "mock: template_anti_affinity_zone"
 
         def check_hpa(parameters):
             self.assertEqual(
@@ -29,11 +29,11 @@ class TestK8sBuilders(TestCase):
                     "targetCPUUtilizationPercentage": 90,
                 },
             )
-            return {"mock: template_hpa"}
+            return "mock: template_hpa"
 
         def check_namespace(parameters):
             self.assertEqual(parameters, {"name": "namespace"})
-            return {"mock: template_namespace"}
+            return "mock: template_namespace"
 
         return {
             "anti_affinity_node": check_anti_affinity_node_template,
@@ -407,7 +407,7 @@ class TestK8sBuilders(TestCase):
                     "maxReplicas": 9,
                     "targetCPUUtilizationPercentage": 80,
                 },
-                "web": {"minReplicas": 5, "maxReplicas": 15, "targetCPUUtilizationPercentage": 90,},
+                "web": {"minReplicas": 5, "maxReplicas": 15, "targetCPUUtilizationPercentage": 90},
             },
         }
         recipe = {"spec": {}}

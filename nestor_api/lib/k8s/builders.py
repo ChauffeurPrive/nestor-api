@@ -186,7 +186,7 @@ def set_replicas(
     return yaml_lib.parse_yaml(templates["hpa"](template_vars))
 
 
-def set_resources(app_config, process_name, recipe) -> None:
+def set_resources(app_config: dict, process_name: str, recipe: dict) -> None:
     """Attach the expected resources to the kubernetes recipe"""
     resources = app_config.get("resources", {})
     resources_config = (
