@@ -165,11 +165,27 @@ def _create_and_protect_branch(
     return report
 
 
-def progress_workflow(app_config, app_name, app_dir, tag, current_step):
+def progress_workflow(app_config, app_name, app_dir, tag, current_step) -> str:
     next_step = get_next_step(app_config, current_step)
     if tag == "":
-        tag = applications.get_last_tag_app(app_name, current_step)
+        git.branch(app_dir, current_step)
+        tag = git.get_last_tag(app_dir)
 
     git.branch(app_dir, next_step)
     git.rebase(app_dir, tag)
     git.push(app_dir)
+
+    return next_step
+
+
+def advance_workflow_app(config, app_name, config_dir, tag, workflow_step):
+    """Advance the workflow af an application to the next step"""
+    app_dir = git.create_working_repository(app_name, git_url)
+    app_config = config.get_app_config(app_name, config_dir)
+
+    Logger.info(
+        {"app": app_name, "tag": tag, "workflow_step": workflow_step},
+        "[/api/workflow/progress/<workflow_step>] Advance to the next workflow step",
+    )
+
+    next_step = progress_workflow(app_config, app_name, app_dir, tag, workflow_step)
