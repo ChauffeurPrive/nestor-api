@@ -1,6 +1,9 @@
 from unittest import TestCase
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, create_autospec, patch
 
+from github import AuthenticatedUser, Branch
+
+from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider
 import nestor_api.lib.workflow as workflow
 
 
@@ -59,7 +62,7 @@ class TestWorkflow(TestCase):
     @patch("nestor_api.lib.workflow.config", autospec=True)
     @patch("nestor_api.lib.workflow.io", autospec=True)
     def test_get_apps_to_move_forward(
-        self, io_mock, config_mock, git_mock, should_app_progress_mock, get_previous_step_mock
+            self, io_mock, config_mock, git_mock, should_app_progress_mock, get_previous_step_mock
     ):
         """Should return a dict with app name as key and
         boolean for ability to progress as value."""
@@ -118,3 +121,169 @@ class TestWorkflow(TestCase):
         """Should raise an error if config is malformed."""
         with self.assertRaises(KeyError):
             workflow.get_previous_step({}, "step1")
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.config", autospec=True)
+    @patch("nestor_api.lib.workflow._create_and_protect_branch", autospec=True)
+    def test_init_workflow(self, _create_and_protect_branch_mock, config_mock, _logger_mock):
+        """Should correctly initialize all branches."""
+        # Mocks
+        config_mock.get_app_config.return_value = {
+            "workflow": ["integration", "staging", "production"]
+        }
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+        user = MagicMock(spec=AuthenticatedUser.AuthenticatedUser)
+        user.login = "some-user-login"
+        git_provider_mock.get_user_info.return_value = user
+        master_branch = MagicMock(spec=Branch.Branch)
+        master_branch.commit.sha = "5ac5ee8"
+        git_provider_mock.get_branch.return_value = master_branch
+        _create_and_protect_branch_mock.side_effect = [
+            {"created": (True, True), "protected": (True, True)},
+            {"created": (False, True), "protected": (True, True)},
+            {"created": (False, True), "protected": (False, True)},
+        ]
+
+        # Test
+        result = workflow.init_workflow("organization", "app-1", git_provider_mock)
+
+        # Assertions
+        git_provider_mock.get_branch.assert_called_with("organization", "app-1", "master")
+        self.assertEqual(
+            result,
+            (
+                "success",
+                {
+                    "integration": {"created": (True, True), "protected": (True, True)},
+                    "staging": {"created": (False, True), "protected": (True, True)},
+                    "production": {"created": (False, True), "protected": (False, True)},
+                },
+            ),
+        )
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.config", autospec=True)
+    @patch("nestor_api.lib.workflow._create_and_protect_branch", autospec=True)
+    def test_init_workflow_failing(
+            self, _create_and_protect_branch_mock, config_mock, _logger_mock
+    ):
+        """Should not re-create workflow branch already existing but should protect
+        it if it is not already."""
+        # Mocks
+        config_mock.get_app_config.return_value = {
+            "workflow": ["integration", "staging", "production"]
+        }
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+        user = MagicMock(spec=AuthenticatedUser.AuthenticatedUser)
+        user.login = "some-user-login"
+        git_provider_mock.get_user_info.return_value = user
+        master_branch = MagicMock(spec=Branch.Branch)
+        master_branch.commit.sha = "5ac5ee8"
+        git_provider_mock.get_branch.return_value = master_branch
+        _create_and_protect_branch_mock.side_effect = [
+            {"created": (True, True), "protected": (True, True)},
+            {"created": (False, True), "protected": (True, True)},
+            {"created": (False, True), "protected": (False, True)},
+        ]
+
+        # Test
+        result = workflow.init_workflow("organization", "app-1", git_provider_mock)
+
+        # Assertions
+        git_provider_mock.get_branch.assert_called_with("organization", "app-1", "master")
+        self.assertEqual(
+            result,
+            (
+                "success",
+                {
+                    "integration": {"created": (True, True), "protected": (True, True)},
+                    "staging": {"created": (False, True), "protected": (True, True)},
+                    "production": {"created": (False, True), "protected": (False, True)},
+                },
+            ),
+        )
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.config", autospec=True)
+    def test_init_workflow_without_configured_workflow(self, config_mock, _logger_mock):
+        """Should create no branches."""
+        # Mocks
+        config_mock.get_app_config.return_value = {}
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+
+        # Test
+        result = workflow.init_workflow("organization", "app-1", git_provider_mock)
+
+        # Assertions
+        git_provider_mock.get_user_info.assert_not_called()
+        git_provider_mock.get_branch.assert_not_called()
+        git_provider_mock.create_branch.assert_not_called()
+        git_provider_mock.protect_branch.assert_not_called()
+        self.assertEqual(result, {})
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    def test_create_and_protect_branch_with_unexisting_branch(self, _logger_mock):
+        """Should create and protect branch."""
+        # Mocks
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+        git_provider_mock.get_branch.return_value = None
+        branch = MagicMock(spec=Branch.Branch)
+        branch.protected = False
+        git_provider_mock.create_branch.return_value = branch
+
+        # Test
+        result = workflow._create_and_protect_branch(
+            "organization", "app-1", "staging", "5ac5ee8", "some-user-login", git_provider_mock
+        )
+
+        # Assertions
+        git_provider_mock.get_branch.assert_called_once_with("organization", "app-1", "staging")
+        git_provider_mock.create_branch.assert_called_once_with(
+            "organization", "app-1", "staging", "5ac5ee8"
+        )
+        git_provider_mock.protect_branch.assert_called_once_with(
+            "organization", "app-1", "staging", "some-user-login"
+        )
+        self.assertEqual(result, {"created": (True, True), "protected": (True, True)})
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    def test_create_and_protect_branch_with_existing_protected_branch(self, _logger_mock):
+        """Should not modify branch."""
+        # Mocks
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+        staging_branch = MagicMock(spec=Branch.Branch)
+        staging_branch.protected = True
+        git_provider_mock.get_branch.return_value = staging_branch
+
+        # Test
+        result = workflow._create_and_protect_branch(
+            "organization", "app-1", "staging", "5ac5ee8", "some-user-login", git_provider_mock
+        )
+
+        # Assertions
+        git_provider_mock.get_branch.assert_called_once_with("organization", "app-1", "staging")
+        git_provider_mock.create_branch.assert_not_called()
+        git_provider_mock.protect_branch.assert_not_called()
+        self.assertEqual(result, {"created": (False, True), "protected": (False, True)})
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    def test_create_workflow_with_existing_unprotected_branch(self, _logger_mock):
+        """Should only protect the branch."""
+        # Mocks
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+        staging_branch = MagicMock(spec=Branch.Branch)
+        staging_branch.protected = False
+        git_provider_mock.get_branch.return_value = staging_branch
+
+        # Test
+        result = workflow._create_and_protect_branch(
+            "organization", "app-1", "staging", "5ac5ee8", "some-user-login", git_provider_mock
+        )
+
+        # Assertions
+        git_provider_mock.get_branch.assert_called_once_with("organization", "app-1", "staging")
+        git_provider_mock.create_branch.assert_not_called()
+        git_provider_mock.protect_branch.assert_called_once_with(
+            "organization", "app-1", "staging", "some-user-login"
+        )
+        self.assertEqual(result, {"created": (False, True), "protected": (True, True)})

@@ -1,10 +1,14 @@
 """Workflow library"""
 
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
+from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider, GitProviderError
 import nestor_api.lib.config as config
 import nestor_api.lib.git as git
 import nestor_api.lib.io as io
+from nestor_api.utils.logger import Logger
+
+MASTER_BRANCH = "master"
 
 
 def get_apps_to_move_forward(next_step: str) -> dict:
@@ -49,3 +53,101 @@ def get_previous_step(project_config: dict, target: str) -> Optional[str]:
     if index > 0:
         return project_config["workflow"][index - 1]
     return None
+
+
+def init_workflow(
+        organization: str, app_name: str, git_provider: AbstractGitProvider
+) -> Tuple[str, Dict[str, Dict[str, Tuple[bool, bool]]]]:
+    """Initialize workflow for a given repo by creating all workflow branches.
+    This function is idempotent which means it will not try to recreate a
+    branch that already exist. However if a branch already exist but is not protected,
+    it will be set to protected."""
+    # Switch to staging environment in order to get application configuration
+    config.change_environment("staging")
+
+    # Get application configuration to get the list of workflow branches
+    app_config = config.get_app_config(app_name)
+    workflow_from_conf = app_config["workflow"] if app_config else []
+
+    workflow_branches = [
+        branch_name for branch_name in workflow_from_conf if branch_name != MASTER_BRANCH
+    ]
+
+    if len(workflow_branches) == 0:
+        return "success", {}
+
+    try:
+        # Get user_login linked to the GITHUB_TOKEN
+        user_info = git_provider.get_user_info()
+        print(user_info)
+        user_login = user_info.login if user_info else None
+        Logger.info({"user_login": user_login}, "User login retrieved")
+
+        # Get the last commit's sha on master branch
+        branch = git_provider.get_branch(organization, app_name, MASTER_BRANCH)
+        master_head_sha = branch and branch.commit and branch.commit.sha
+        if not master_head_sha:
+            Logger.error(
+                {"master_branch_name": MASTER_BRANCH},
+                "master last commit sha failed to be retrieved.",
+            )
+            raise Exception("Repository looks empty")
+        Logger.info({"sha": master_head_sha}, "master last commit sha retrieved")
+
+        # Sync all workflow branches with master's head and
+        # protect them by limiting push rights to user_login
+        branches = {}
+        status = "success"
+        for branch_name in workflow_branches:
+            try:
+                branches[branch_name] = _create_and_protect_branch(
+                    organization, app_name, branch_name, master_head_sha, user_login, git_provider
+                )
+            except GitProviderError as err:
+                Logger.error(
+                    {
+                        "branch_name": branch_name,
+                        "app_name": app_name,
+                        "organization": organization,
+                        "err": err,
+                    },
+                    "Fail to create & protect branch",
+                )
+                status = "fail"
+        return status, branches
+    except GitProviderError as err:
+        Logger.error(
+            {"organization": organization, "app_name": app_name, "err": err, },
+            "Fail to initialize workflow",
+        )
+        raise Exception("Fail to initialize workflow")
+
+
+# pylint: disable=too-many-arguments
+def _create_and_protect_branch(
+        organization: str,
+        app_name: str,
+        branch_name: str,
+        master_sha: str,
+        user_login: str,
+        git_provider: AbstractGitProvider,
+) -> Dict[str, Tuple[bool, bool]]:
+    """Try to create and protect a branch on a repository"""
+    report = {}
+    branch = git_provider.get_branch(organization, app_name, branch_name)
+    if branch is not None:
+        Logger.info({"branch_name": branch_name}, "Branch already exists. Skipped creation.")
+        report["created"] = (False, True)
+    else:
+        branch = git_provider.create_branch(organization, app_name, branch_name, master_sha)
+        Logger.info({"branch_name": branch_name}, "Branch created")
+        report["created"] = (True, True)
+
+    if branch.protected is True:
+        Logger.info({"branch_name": branch_name}, "Branch is already protected. Skipped protection.")
+        report["protected"] = (False, True)
+    else:
+        git_provider.protect_branch(organization, app_name, branch_name, user_login)
+        Logger.info({"branch_name": branch_name}, "Branch protected")
+        report["protected"] = (True, True)
+    return report
