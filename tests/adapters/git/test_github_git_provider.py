@@ -9,22 +9,25 @@ from nestor_api.adapters.git.github_git_provider import GitHubGitProvider
 
 @patch("nestor_api.adapters.git.github_git_provider.Github", autospec=True)
 class TestGitHubGitProvider(TestCase):
-    @patch("nestor_api.adapters.git.github_git_provider.Configuration", autospec=True)
-    def test_init(self, configuration_mock, github_mock):
+    @patch("nestor_api.adapters.git.github_git_provider.GitConfiguration", autospec=True)
+    def test_init(self, git_configuration_mock, github_mock):
         """Should init the Github client."""
-        configuration_mock.get_git_provider_token.return_value = "some-token"
+        git_configuration_mock.get_git_provider_token.return_value = "some-token"
         GitHubGitProvider()
         github_mock.assert_called_once_with("some-token")
 
     def test_get_user_info(self, github_mock):
         """Should get the user data."""
+        # Mocks
         fake_user = MagicMock(spec=AuthenticatedUser.AuthenticatedUser)
         instance = github_mock.return_value
         instance.get_user.return_value = fake_user
-
         github_provider = GitHubGitProvider()
+
+        # Test
         result = github_provider.get_user_info()
 
+        # Assertions
         instance.get_user.assert_called_once()
         self.assertEqual(result, fake_user)
 
@@ -39,23 +42,33 @@ class TestGitHubGitProvider(TestCase):
 
     def test_get_branch(self, github_mock):
         """Should get the branch data."""
+        # Mocks
         fake_branch_result = MagicMock(spec=Branch.Branch)
         instance = github_mock.return_value
         instance.get_repo.return_value.get_branch.return_value = fake_branch_result
         github_provider = GitHubGitProvider()
+
+        # Test
         result = github_provider.get_branch("organization", "fake-project", "fake-branch")
+
+        # Assertions
         instance.get_repo.assert_called_once_with("organization/fake-project")
         instance.get_repo.return_value.get_branch.assert_called_once_with(branch="fake-branch")
         self.assertEqual(result, fake_branch_result)
 
     def test_get_branch_not_found(self, github_mock):
         """Should return None when the branch is not found."""
+        # Mocks
         instance = github_mock.return_value
         instance.get_repo.return_value.get_branch.side_effect = GithubException(
             404, "branch not found"
         )
         github_provider = GitHubGitProvider()
+
+        # Test
         result = github_provider.get_branch("organization", "fake-project", "fake-branch")
+
+        # Assertions
         instance.get_repo.assert_called_once_with("organization/fake-project")
         instance.get_repo.return_value.get_branch.assert_called_once_with(branch="fake-branch")
         self.assertIsNone(result)
@@ -72,13 +85,18 @@ class TestGitHubGitProvider(TestCase):
     @patch.object(GitHubGitProvider, "get_branch", autospec=True)
     def test_create_branch(self, get_branch_mock, github_mock):
         """Should create the branch and return its data."""
+        # Mocks
         fake_branch_result = MagicMock(spec=Branch.Branch)
         instance = github_mock.return_value
         get_branch_mock.return_value = fake_branch_result
         github_provider = GitHubGitProvider()
+
+        # Test
         result = github_provider.create_branch(
             "organization", "fake-project", "fake-branch", "fake-sha1"
         )
+
+        # Assertions
         instance.get_repo.assert_called_once_with("organization/fake-project")
         instance.get_repo.return_value.create_git_ref.assert_called_once_with(
             "refs/heads/fake-branch", "fake-sha1"

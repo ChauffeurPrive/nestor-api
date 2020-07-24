@@ -1,9 +1,9 @@
 """Abstract adapter for git provider."""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class AbstractGitProvider(metaclass=ABCMeta):
+class AbstractGitProvider(ABC):
     """Abstract adapter for git provider."""
 
     @abstractmethod
