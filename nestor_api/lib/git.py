@@ -56,6 +56,11 @@ def push(repository_dir: str, branch_name: str = "HEAD") -> None:
     io.execute(f"git push origin {branch_name} --tags --follow-tags", repository_dir)
 
 
+def rebase(repository_dir: str, branch_name: str) -> None:
+    """Rebase the current branch on top of the given branch"""
+    io.execute(f"git rebase {branch_name} --keep-empty", repository_dir)
+
+
 def tag(repository_dir: str, tag_name: str, tag_message: str = "NESTOR_AUTO_TAG") -> str:
     """Add a tag to the repository"""
     commit_hash = get_last_commit_hash(repository_dir)

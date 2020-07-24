@@ -113,6 +113,13 @@ class TestGitLibrary(TestCase):
             "git push origin feature/branch --tags --follow-tags", "/path_to/a_git_repository",
         )
 
+    def test_rebase(self, io_mock):
+        git.rebase("/path_to/a_git_repository", "feature/branch")
+
+        io_mock.execute.assert_called_once_with(
+            "git rebase feature/branch --keep-empty", "/path_to/a_git_repository",
+        )
+
     @patch("nestor_api.lib.git.get_last_commit_hash", autospec=True)
     def test_tag(self, get_last_commit_hash_mock, io_mock):
         get_last_commit_hash_mock.return_value = "1ab2c3d"
