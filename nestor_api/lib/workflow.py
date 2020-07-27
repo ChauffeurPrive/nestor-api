@@ -74,54 +74,41 @@ def init_workflow(
         branch_name for branch_name in workflow_from_conf if branch_name != master_tag
     ]
 
-    if len(workflow_branches) == 0:
-        return "success", {}
+    branches = {}
+    status = "success"
+    if len(workflow_branches) != 0:
+        try:
+            # Get user_login linked to the GITHUB_TOKEN
+            user_info = git_provider.get_user_info()
+            print(user_info)
+            user_login = user_info.login if user_info else None
+            Logger.info({"user_login": user_login}, "User login retrieved")
 
-    try:
-        # Get user_login linked to the GITHUB_TOKEN
-        user_info = git_provider.get_user_info()
-        print(user_info)
-        user_login = user_info.login if user_info else None
-        Logger.info({"user_login": user_login}, "User login retrieved")
+            # Get the last commit's sha on master branch
+            branch = git_provider.get_branch(organization, app_name, master_tag)
+            master_head_sha = branch and branch.commit and branch.commit.sha
+            if not master_head_sha:
+                Logger.error(
+                    {"master_branch_name": master_tag},
+                    "master last commit sha failed to be retrieved.",
+                )
+                raise Exception("Repository looks empty")
+            Logger.info({"sha": master_head_sha}, "master last commit sha retrieved")
 
-        # Get the last commit's sha on master branch
-        branch = git_provider.get_branch(organization, app_name, master_tag)
-        master_head_sha = branch and branch.commit and branch.commit.sha
-        if not master_head_sha:
-            Logger.error(
-                {"master_branch_name": master_tag},
-                "master last commit sha failed to be retrieved.",
-            )
-            raise Exception("Repository looks empty")
-        Logger.info({"sha": master_head_sha}, "master last commit sha retrieved")
-
-        # Sync all workflow branches with master's head and
-        # protect them by limiting push rights to user_login
-        branches = {}
-        status = "success"
-        for branch_name in workflow_branches:
-            try:
+            # Sync all workflow branches with master's head and
+            # protect them by limiting push rights to user_login
+            for branch_name in workflow_branches:
                 branches[branch_name] = _create_and_protect_branch(
                     organization, app_name, branch_name, master_head_sha, user_login, git_provider
                 )
-            except GitProviderError as err:
-                Logger.error(
-                    {
-                        "branch_name": branch_name,
-                        "app_name": app_name,
-                        "organization": organization,
-                        "err": err,
-                    },
-                    "Fail to create & protect branch",
-                )
-                status = "fail"
-        return status, branches
-    except GitProviderError as err:
-        Logger.error(
-            {"organization": organization, "app_name": app_name, "err": err},
-            "Fail to initialize workflow",
-        )
-        raise Exception("Fail to initialize workflow")
+
+        except GitProviderError as err:
+            Logger.error(
+                {"organization": organization, "app_name": app_name, "err": err},
+                "Fail to initialize workflow",
+            )
+            status = "fail"
+    return status, branches
 
 
 # pylint: disable=too-many-arguments
