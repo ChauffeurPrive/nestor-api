@@ -3,12 +3,11 @@
 from typing import Dict, Optional, Tuple
 
 from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider, GitProviderError
+from nestor_api.config.git import GitConfiguration
 import nestor_api.lib.config as config
 import nestor_api.lib.git as git
 import nestor_api.lib.io as io
 from nestor_api.utils.logger import Logger
-
-MASTER_BRANCH = "master"
 
 
 def get_apps_to_move_forward(next_step: str) -> dict:
@@ -72,7 +71,7 @@ def init_workflow(
     master_tag = GitConfiguration.get_master_tag()
 
     workflow_branches = [
-        branch_name for branch_name in workflow_from_conf if branch_name != MASTER_BRANCH
+        branch_name for branch_name in workflow_from_conf if branch_name != master_tag
     ]
 
     if len(workflow_branches) == 0:
@@ -86,11 +85,11 @@ def init_workflow(
         Logger.info({"user_login": user_login}, "User login retrieved")
 
         # Get the last commit's sha on master branch
-        branch = git_provider.get_branch(organization, app_name, MASTER_BRANCH)
+        branch = git_provider.get_branch(organization, app_name, master_tag)
         master_head_sha = branch and branch.commit and branch.commit.sha
         if not master_head_sha:
             Logger.error(
-                {"master_branch_name": MASTER_BRANCH},
+                {"master_branch_name": master_tag},
                 "master last commit sha failed to be retrieved.",
             )
             raise Exception("Repository looks empty")
