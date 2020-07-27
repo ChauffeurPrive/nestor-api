@@ -1,0 +1,23 @@
+app: public-api
+git:
+  origin: 'git@github.com:my-organization/public-api.git'
+teams:
+  name: core
+is_enabled: true
+public: true
+processes:
+  - name: web
+    start_command: npm start -- web
+    is_cronjob: false
+resources:
+  web:
+    requests:
+      memory: 1024Mi
+      cpu: 0.5
+    limits:
+      memory: 4096Mi
+      cpu: 1
+variables:
+  app:
+    LANGUAGES: 'en-US,fr-FR'
+  ope: {}

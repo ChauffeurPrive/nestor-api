@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{name}}'
+  labels:
+    type: app
+    app: '{{app}}'
+    process: '{{process}}'
+    project: '{{project}}'
+    criticity: {{#if tplCriticity}}{{tplCriticity}}{{else}}none{{/if}}
+spec:
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      type: app
+      app: '{{app}}'
+      process: '{{process}}'
+      project: '{{project}}'
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        type: app
+        app: '{{app}}'
+        process: '{{process}}'
+        project: '{{project}}'
+    spec:
+      containers:
+      - name: '{{app}}'
+        image: '{{image}}'
+        imagePullPolicy: Always
+        env:
+        - name: MESSAGE
+          value: "hello world"

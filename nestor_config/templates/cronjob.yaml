@@ -1,0 +1,29 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: '{{name}}'
+  labels:
+    type: app
+    app: '{{app}}'
+    process: '{{process}}'
+    project: '{{project}}'
+    criticity: {{#if tplCriticity}}{{tplCriticity}}{{else}}none{{/if}}
+spec:
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            type: app
+            app: '{{app}}'
+            process: '{{process}}'
+            project: '{{project}}'
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: '{{app}}'
+              image: '{{image}}'
+              imagePullPolicy: Always
+              env:
+                - name: MESSAGE
+                  value: "hello world"

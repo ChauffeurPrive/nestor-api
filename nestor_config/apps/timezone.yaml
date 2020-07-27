@@ -1,0 +1,24 @@
+app: timezone
+git:
+  origin: 'git@github.com:my-organization/timezone.git'
+teams:
+  name: core
+is_enabled: true
+processes:
+  - name: web
+    start_command: npm start
+    is_cronjob: false
+resources:
+  web:
+    requests:
+      memory: 1024Mi
+      cpu: 0.5
+    limits:
+      memory: 4096Mi
+      cpu: 1
+variables:
+  app:
+    USE_LOCAL_TIMEZONE_FETCH: 'true'
+  ope:
+    MONGO_URL: >-
+      mongodb://timezone:ab1Cde2fghI34jkLmn5oPq6rsTU7v8wx@mongo-4-2.{{namespace}}:27017/timezone
