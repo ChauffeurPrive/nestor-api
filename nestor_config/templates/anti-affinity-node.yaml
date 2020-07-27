@@ -1,0 +1,15 @@
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - {{app}}
+          - key: process
+            operator: In
+            values:
+            - {{process}}
+        topologyKey: "kubernetes.io/hostname"

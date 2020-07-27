@@ -1,0 +1,32 @@
+app: identity-provider
+git:
+  origin: 'git@github.com:my-organization/identity-provider.git'
+teams:
+  name: security
+dependencies:
+  - two-factor-authenticator
+is_enabled: true
+tls:
+  enabled: true
+processes:
+  - name: web
+    start_command: npm start
+    is_cronjob: false
+resources:
+  web:
+    requests:
+      memory: 1024Mi
+      cpu: 0.5
+    limits:
+      memory: 4096Mi
+      cpu: 1
+variables:
+  app:
+    ENABLE_TWO_FACTOR_AUTHENTICATION: 'false'
+    LOGGER_LEVEL: debug
+  ope:
+    AMQP_URL: >-
+      amqp://identity-provider:ab1Cde2fghI34jkL@amqp-3-7-15-management.{{namespace}}:5672
+    MONGO_URL: >-
+      mongodb://identity-provider:ab1Cde2fghI34jkLmn5oPq6rsTU7v8wx@mongo-4-2.{{namespace}}:27017/identity-provider
+    TWO_FACTOR_AUTHENTICATION_API_URL: 'http://two-factor-authentication{{domain_prefix}}.{{domain}}'

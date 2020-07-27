@@ -1,0 +1,25 @@
+app: two-factor-authenticator
+git:
+  origin: 'git@github.com:my-organization/two-factor-authenticator.git'
+teams:
+  name: security  
+is_enabled: true
+processes:
+  - name: web
+    start_command: npm start
+    is_cronjob: false
+resources:
+  web:
+    requests:
+      memory: 1024Mi
+      cpu: 0.5
+    limits:
+      memory: 4096Mi
+      cpu: 1
+variables:
+  app: {}
+  ope:
+    AMQP_URL: >-
+      amqp://two-factor-authenticator:ab1Cde2fghI34jkL@amqp-3-7-15-management.{{namespace}}:5672
+    MONGO_URL: >-
+      mongodb://two-factor-authenticator:ab1Cde2fghI34jkLmn5oPq6rsTU7v8wx@mongo-4-2.{{namespace}}:27017/two-factor-authenticator

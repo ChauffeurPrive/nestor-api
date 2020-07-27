@@ -1,0 +1,64 @@
+project: my-organization
+env: &env staging
+domain: v1.integration.my-organization.app
+domain_public: staging.my-organization.com
+env_suffix: ''
+domain_prefix: '-staging'
+domain_prefix_public: ''
+docker:
+  build:
+    variables:
+      NPM_TOKEN: $NPM_BUILD_TOKEN
+  registries:
+    docker.com:
+      - id: docker
+        organization: my-organization
+deployments:
+  - cluster_name: gke_testing-environments_europe-west1-b_integration-v1
+    namespace: staging
+    global_ingress:
+      external_ip: '12.123.12.123'
+      external_ip_name: integration-static-ip
+      services:
+        amqp:
+          3-7-15-management: 123.123.123.123
+    secret: dockerhubregistrykey
+    registry:
+      platform: docker.com
+      id: docker
+    affinity:
+      default:
+        is_anti_affinity_node_enabled: true
+        is_anti_affinity_zone_enabled: true
+    scales:
+      default:
+        minReplicas: 1
+        maxReplicas: 1
+        targetCPUUtilizationPercentage: 75
+    resources:
+      default:
+        requests:
+          memory: 256Mi
+          cpu: 0.1
+        limits:
+          memory: 1024Mi
+          cpu: 1
+    nodeSelector:
+      default:
+        tier: app
+probes:
+  web:
+    path: /heartbeat
+    delay: 10
+variables:
+  ope:
+    LOGGER_LEVEL: info
+    LOGGER_NAME: '{{env}}.{{app}}'
+    PORT: '8080'
+tls:
+  crt: $TLS_CERT
+  key: $TLS_KEY
+workflow:
+  - master
+  - staging
+  - production

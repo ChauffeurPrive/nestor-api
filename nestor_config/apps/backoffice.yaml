@@ -1,0 +1,34 @@
+app: backoffice
+git:
+  origin: "git@github.com:my-organization/backoffice.git"
+teams:
+  name: core
+dependencies:
+  - identity-provider
+  - invoice
+is_enabled: true
+public: true
+tls:
+  enabled: true
+processes:
+  - name: web
+    start_command: npm start
+    is_cronjob: false
+resources:
+  web:
+    requests:
+      memory: 1024Mi
+      cpu: 0.5
+    limits:
+      memory: 4096Mi
+      cpu: 1
+variables:
+  app:
+    COOKIE_DOMAIN: ".{{domain_public}}"
+    LOGGER_LEVEL: debug
+    MAINTENANCE_PAGE_URL: http://url/maintenance.html
+    MIN_CHARACTERS_SEARCH_FILTER: "3"
+  ope:
+    IDENTITY_PROVIDER_API_URL: "http://identity-provider{{domain_prefix}}.{{domain}}/"
+    INVOICE_API_URL: "http://invoice{{domain_prefix}}.{{domain}}/"
+  

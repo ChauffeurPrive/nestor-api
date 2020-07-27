@@ -1,0 +1,38 @@
+app: invoice
+git:
+  origin: 'git@github.com:my-organization/invoice.git'
+teams:
+  name: payment
+is_enabled: true
+public: true
+tls:
+  enabled: true
+processes:
+  - name: web
+    start_command: npm start
+    is_cronjob: false
+  - name: worker
+    start_command: node src/worker/index.js
+    is_cronjob: false
+  - name: generate-invoices
+    start_command: node src/generateInvoices.js
+    is_cronjob: true
+crons:
+  generate-invoices
+    concurrency_policy: Forbid
+    schedule: "0 0 * * *"
+probes:
+  web:
+    liveness:
+      delay: 40
+      path: /heartbeat
+    readiness:
+      delay: 40
+      path: /heartbeat
+
+variables:
+  app:
+    ENABLE_S3_UPLOAD: 'true'
+  ope:
+    AMQP_URL: 'amqp://invoice:ab1Cde2fghI34jkL@amqp-3-7-15-management.{{namespace}}:5672'
+    MONGO_URL: 'mongodb://invoice:ab1Cde2fghI34jkLmn5oPq6rsTU7v8wx@mongo-4-2.{{namespace}}:27017/invoice'
