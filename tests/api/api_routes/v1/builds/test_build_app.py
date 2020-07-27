@@ -10,18 +10,18 @@ def _mock_thread(target, args):
     return mock
 
 
-@patch("nestor_api.api.api_routes.builds.build_app.Thread", side_effect=_mock_thread)
-@patch("nestor_api.api.api_routes.builds.build_app.Logger", autospec=True)
-@patch("nestor_api.api.api_routes.builds.build_app.app", autospec=True)
-@patch("nestor_api.api.api_routes.builds.build_app.config", autospec=True)
-@patch("nestor_api.api.api_routes.builds.build_app.docker", autospec=True)
-@patch("nestor_api.api.api_routes.builds.build_app.git", autospec=True)
-@patch("nestor_api.api.api_routes.builds.build_app.io", autospec=True)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.Thread", side_effect=_mock_thread)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.Logger", autospec=True)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.app", autospec=True)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.config", autospec=True)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.docker", autospec=True)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.git", autospec=True)
+@patch("nestor_api.api.api_routes.v1.builds.build_app.io", autospec=True)
 class TestApiBuildApp(TestCase):
     def setUp(self):
         self.app_client = create_app().test_client()
 
-    @patch("nestor_api.api.api_routes.builds.build_app.Configuration", autospec=True)
+    @patch("nestor_api.api.api_routes.v1.builds.build_app.Configuration", autospec=True)
     def test_build_app(
         self,
         configuration_mock,
@@ -51,7 +51,7 @@ class TestApiBuildApp(TestCase):
         docker_mock.build.return_value = "my-app@1.0.0-sha-a1b2c3d4"
 
         # Tests
-        response = self.app_client.post("/api/builds/my-app")
+        response = self.app_client.post("/api/v1/builds/my-app")
         (status_code, text) = (response.status_code, response.get_data(as_text=True))
 
         # Assertions
@@ -94,7 +94,7 @@ class TestApiBuildApp(TestCase):
         git_mock.tag.side_effect = exception
 
         # Tests
-        response = self.app_client.post("/api/builds/my-app")
+        response = self.app_client.post("/api/v1/builds/my-app")
         (status_code, text) = (response.status_code, response.get_data(as_text=True))
 
         # Assertions
@@ -102,7 +102,8 @@ class TestApiBuildApp(TestCase):
         self.assertEqual(text, "Build processing")
 
         logger_mock.warn.assert_called_once_with(
-            {"app": "my-app", "err": exception}, "[/api/builds/:app] Error while tagging the app",
+            {"app": "my-app", "err": exception},
+            "[/api/v1/builds/:app] Error while tagging the app",
         )
         logger_mock.error.assert_not_called()
 
@@ -122,7 +123,7 @@ class TestApiBuildApp(TestCase):
         docker_mock.build.side_effect = exception
 
         # Tests
-        response = self.app_client.post("/api/builds/my-app")
+        response = self.app_client.post("/api/v1/builds/my-app")
         (status_code, text) = (response.status_code, response.get_data(as_text=True))
 
         # Assertions
@@ -137,7 +138,7 @@ class TestApiBuildApp(TestCase):
         logger_mock.warn.assert_not_called()
         logger_mock.error.assert_called_once_with(
             {"app": "my-app", "err": exception},
-            "[/api/builds/:app] Error while tagging and building the app",
+            "[/api/v1/builds/:app] Error while tagging and building the app",
         )
 
     def test_build_app_handle_early_errors(
@@ -147,7 +148,7 @@ class TestApiBuildApp(TestCase):
         config_mock.create_temporary_config_copy.side_effect = exception
 
         # Tests
-        response = self.app_client.post("/api/builds/my-app")
+        response = self.app_client.post("/api/v1/builds/my-app")
         (status_code, text) = (response.status_code, response.get_data(as_text=True))
 
         # Assertions
@@ -162,7 +163,7 @@ class TestApiBuildApp(TestCase):
         logger_mock.warn.assert_not_called()
         logger_mock.error.assert_called_once_with(
             {"app": "my-app", "err": exception},
-            "[/api/builds/:app] Error while tagging and building the app",
+            "[/api/v1/builds/:app] Error while tagging and building the app",
         )
 
     def test_build_app_error_during_cleanup(
@@ -179,7 +180,7 @@ class TestApiBuildApp(TestCase):
         io_mock.remove.side_effect = exception
 
         # Tests
-        response = self.app_client.post("/api/builds/my-app")
+        response = self.app_client.post("/api/v1/builds/my-app")
         (status_code, text) = (response.status_code, response.get_data(as_text=True))
 
         # Assertions
@@ -188,5 +189,5 @@ class TestApiBuildApp(TestCase):
 
         logger_mock.warn.assert_not_called()
         logger_mock.error.assert_called_once_with(
-            {"app": "my-app", "err": exception}, "[/api/builds/:app] Error during cleanup",
+            {"app": "my-app", "err": exception}, "[/api/v1/builds/:app] Error during cleanup",
         )
