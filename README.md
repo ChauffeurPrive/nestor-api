@@ -31,3 +31,4 @@ pipenv sync # Add --dev to also install dev dependencies
 |              `NESTOR_REPLICAS_DEFAULT_MAX` | `10`                   | `replicas` | Default maximum number of replicas                          |
 | `NESTOR_REPLICAS_DEFAULT_TARGET_CPU_USAGE` | `75`                   | `%`        | Default target cpu usage that will trigger an autoscaling   |
 |                    `NESTOR_K8S_HTTP_PROXY` |                        |            | The kubernetes HTTP_PROXY                                   |
+|               `NESTOR_K8S_TEMPLATE_FOLDER` | `templates`            |            | The subfolder in which the "build" templates will be loaded |

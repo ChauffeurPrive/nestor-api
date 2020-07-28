@@ -42,21 +42,24 @@ class TestK8sBuilders(TestCase):
             "namespace": check_namespace,
         }
 
-    @patch("nestor_api.lib.k8s.builders.Compiler", autospec=True)
     @patch("nestor_api.lib.k8s.builders.io", autospec=True)
-    def test_load_templates(self, io_mock, template_compiler_mock):
-        io_mock.read.side_effect = lambda x: f"file: {x}"
-        compile_mock = template_compiler_mock.return_value.compile
+    def test_load_templates(self, io_mock):
+        """Should load the templates and correctly substitute `{{variable}}`"""
+
+        def _read_mock(file_name):
+            return f"file: {file_name}\n" + "template: {{variable}}\n"
+
+        io_mock.read.side_effect = _read_mock
 
         templates = k8s_builders.load_templates("/path", ["template_a", "template_b"])
+        result_a = templates["template_a"]({"variable": "value_a"})
+        result_b = templates["template_b"]({"variable": "value_b"})
 
-        self.assertEqual(list(templates.keys()), ["template_a", "template_b"])
         io_mock.read.assert_has_calls(
             [call("/path/template_a.yaml"), call("/path/template_b.yaml")]
         )
-        compile_mock.assert_has_calls(
-            [call("file: /path/template_a.yaml"), call("file: /path/template_b.yaml")]
-        )
+        self.assertEqual(result_a, "file: /path/template_a.yaml\ntemplate: value_a\n")
+        self.assertEqual(result_b, "file: /path/template_b.yaml\ntemplate: value_b\n")
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_not_enabled_default(self, parse_yaml_mock):
