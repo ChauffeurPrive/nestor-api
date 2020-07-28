@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e8f5539990cdc14bae2027478f9b02447aab215c1db8e6b1f5019b722dfc639d"
+            "sha256": "ac1b031b20e27d8320c1fefcfa30d69b9842f88ed5bde5f763534ce690771c4b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -141,6 +141,13 @@
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.1.1"
         },
+        "pybars3": {
+            "hashes": [
+                "sha256:6ac847e905e53b9c5b936af112c910475e27bf767f79f4528c16f9af1ec0e252"
+            ],
+            "index": "pypi",
+            "version": "==0.9.7"
+        },
         "pygithub": {
             "hashes": [
                 "sha256:8375a058ec651cc0774244a3bc7395cf93617298735934cdd59e5bcd9a1df96e",
@@ -155,6 +162,12 @@
                 "sha256:8d59a976fb773f3e6a39c85636357c4f0e242707394cadadd9814f5cbaa20e96"
             ],
             "version": "==1.7.1"
+        },
+        "pymeta3": {
+            "hashes": [
+                "sha256:18bda326d9a9bbf587bfc0ee0bc96864964d78b067288bcf55d4d98681d05bcb"
+            ],
+            "version": "==0.5.1"
         },
         "pyrsistent": {
             "hashes": [

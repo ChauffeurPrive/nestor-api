@@ -19,6 +19,7 @@ PyYAML = "==5.3.1"
 semver = "==2.10.2"
 jsonschema = "==3.2.0"
 pygithub = "==1.51"
+pybars3 = "*"
 
 [requires]
 python_version = "3.7"
