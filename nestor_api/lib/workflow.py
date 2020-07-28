@@ -88,7 +88,6 @@ def init_workflow(
         try:
             # Get user_login linked to the GITHUB_TOKEN
             user_info = git_provider.get_user_info()
-            print(user_info)
             user_login = user_info.login if user_info else None
             Logger.info({"user_login": user_login}, "User login retrieved")
 
