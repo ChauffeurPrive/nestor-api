@@ -152,7 +152,7 @@ class TestWorkflow(TestCase):
         self.assertEqual(
             result,
             (
-                "success",
+                workflow.WorkflowInitStatus.SUCCESS,
                 {
                     "integration": {"created": (True, True), "protected": (True, True)},
                     "staging": {"created": (False, True), "protected": (True, True)},
@@ -214,7 +214,7 @@ class TestWorkflow(TestCase):
         # Assertions
         git_provider_mock.get_branch.assert_called_with("organization", "app-1", "master")
         self.assertEqual(
-            result, ("fail", {},),
+            result, (workflow.WorkflowInitStatus.FAIL, {},),
         )
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
@@ -233,7 +233,7 @@ class TestWorkflow(TestCase):
         git_provider_mock.get_branch.assert_not_called()
         git_provider_mock.create_branch.assert_not_called()
         git_provider_mock.protect_branch.assert_not_called()
-        self.assertEqual(result, ("success", {}))
+        self.assertEqual(result, (workflow.WorkflowInitStatus.SUCCESS, {}))
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
     def test_create_and_protect_branch_with_unexisting_branch(self, _logger_mock):

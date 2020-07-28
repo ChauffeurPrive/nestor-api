@@ -1,5 +1,6 @@
 """Workflow library"""
 
+from enum import Enum
 from typing import Dict, Optional, Tuple
 
 from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider, GitProviderError
@@ -8,6 +9,13 @@ import nestor_api.lib.config as config
 import nestor_api.lib.git as git
 import nestor_api.lib.io as io
 from nestor_api.utils.logger import Logger
+
+
+class WorkflowInitStatus(Enum):
+    """Enum for workflow initialization status."""
+
+    SUCCESS = "SUCCESS"
+    FAIL = "FAIL"
 
 
 def get_apps_to_move_forward(next_step: str) -> dict:
@@ -56,7 +64,7 @@ def get_previous_step(project_config: dict, target: str) -> Optional[str]:
 
 def init_workflow(
     organization: str, app_name: str, git_provider: AbstractGitProvider
-) -> Tuple[str, Dict[str, Dict[str, Tuple[bool, bool]]]]:
+) -> Tuple[WorkflowInitStatus, Dict[str, Dict[str, Tuple[bool, bool]]]]:
     """Initialize workflow for a given repo by creating all workflow branches.
     This function is idempotent which means it will not try to recreate a
     branch that already exist. However if a branch already exist but is not protected,
@@ -75,7 +83,7 @@ def init_workflow(
     ]
 
     branches = {}
-    status = "success"
+    status = WorkflowInitStatus.SUCCESS
     if len(workflow_branches) != 0:
         try:
             # Get user_login linked to the GITHUB_TOKEN
@@ -107,7 +115,7 @@ def init_workflow(
                 {"organization": organization, "app_name": app_name, "err": err},
                 "Fail to initialize workflow",
             )
-            status = "fail"
+            status = WorkflowInitStatus.FAIL
     return status, branches
 
 

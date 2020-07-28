@@ -26,10 +26,10 @@ def init_workflow(organization, app):
         git_provider = get_git_provider(project_config)
         report_status, report = workflow_lib.init_workflow(organization, app, git_provider)
 
-        if report_status == "fail":
+        if report_status == workflow_lib.WorkflowInitStatus.FAIL:
             status = HTTPStatus.INTERNAL_SERVER_ERROR
             message = "Workflow initialization failed"
-        elif report_status == "success":
+        elif report_status == workflow_lib.WorkflowInitStatus.SUCCESS:
             status = HTTPStatus.OK
             message = "Workflow initialization succeeded"
         else:

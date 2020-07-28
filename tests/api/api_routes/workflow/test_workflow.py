@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider
 from nestor_api.api.flask_app import create_app
+from nestor_api.lib.workflow import WorkflowInitStatus
 
 
 @patch("nestor_api.api.api_routes.workflow.workflow.Logger", autospec=True)
@@ -15,18 +16,19 @@ class TestWorkflow(TestCase):
         self.app_client = app.test_client()
 
     @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
     @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
     def test_init_workflow(
-        self, config_mock, workflow_lib_mock, get_git_provider_mock, io_mock, _logger_mock
+        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):
         """Should properly return success response containing report."""
         # Mock
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
         fake_config = {"git": {"provider": "some-provider"}}
         config_mock.get_project_config.return_value = fake_config
         get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        workflow_lib_mock.init_workflow.return_value = (
-            "success",
+        init_workflow_mock.return_value = (
+            WorkflowInitStatus.SUCCESS,
             {"integration": {"created": (True, True), "protected": (True, True)}},
         )
 
@@ -51,17 +53,19 @@ class TestWorkflow(TestCase):
         io_mock.remove.assert_called_with("fake-path")
 
     @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
     @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
     def test_init_workflow_failing(
-        self, config_mock, workflow_lib_mock, get_git_provider_mock, io_mock, _logger_mock
+        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):
         """Should properly return fail response containing report."""
         # Mock
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
         fake_config = {"git": {"provider": "some-provider"}}
         config_mock.get_project_config.return_value = fake_config
         get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        workflow_lib_mock.init_workflow.return_value = ("fail", {})
+        print(WorkflowInitStatus.FAIL)
+        init_workflow_mock.return_value = (WorkflowInitStatus.FAIL, {})
 
         # Tests
         response = self.app_client.post("/api/workflow/init/my-org/my-app")
@@ -84,10 +88,10 @@ class TestWorkflow(TestCase):
         io_mock.remove.assert_called_with("fake-path")
 
     @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
     @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
     def test_init_workflow_return_unexpected_status(
-        self, config_mock, workflow_lib_mock, get_git_provider_mock, io_mock, _logger_mock
+        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):
         """Should properly return fail response containing error."""
         # Mock
@@ -95,7 +99,7 @@ class TestWorkflow(TestCase):
         fake_config = {"git": {"provider": "some-provider"}}
         config_mock.get_project_config.return_value = fake_config
         get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        workflow_lib_mock.init_workflow.return_value = ("unexpected-status", {})
+        init_workflow_mock.return_value = ("unexpected-status", {})
 
         # Tests
         response = self.app_client.post("/api/workflow/init/my-org/my-app")
