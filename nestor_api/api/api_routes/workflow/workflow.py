@@ -1,6 +1,5 @@
 """Define the workflows routes."""
 from http import HTTPStatus
-import traceback
 
 from nestor_api.adapters.git.provider import get_git_provider
 import nestor_api.lib.config as config_lib
@@ -9,7 +8,7 @@ from nestor_api.utils.logger import Logger
 
 
 def init_workflow(organization, app):
-    """Initialize workflow of an application."""
+    """Initialize the workflow of an application."""
     Logger.debug(
         {"app": app, "organization": organization},
         "[/api/workflow/init/:org/:app] Workflow initialization started",
@@ -47,7 +46,7 @@ def init_workflow(organization, app):
             {"organization": organization, "app": app, "report": report, "err": str(err)},
             "[/api/workflow/init/:org/:app] Workflow initialization failed",
         )
-        print(traceback.print_exc())
+
         # HTTP Response
         return (
             {
