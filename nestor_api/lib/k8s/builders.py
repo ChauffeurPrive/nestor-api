@@ -1,11 +1,38 @@
 """k8s deployment file builders"""
 
+import os
 from typing import Optional
+
+from pybars import Compiler  # type: ignore
 
 from nestor_api.config.probes import ProbesDefaultConfiguration
 from nestor_api.config.replicas import ReplicasDefaultConfiguration
 import nestor_api.lib.docker as docker
+import nestor_api.lib.io as io
 import yaml_lib
+
+TEMPLATES = [
+    "deployment",
+    "hpa",
+    "anti-affinity-node",
+    "anti-affinity-zone",
+    "service",
+    "namespace",
+    "cronjob",
+    "job",
+]
+
+
+def load_templates(templates_path: str, template_names: list) -> dict:
+    """Load the templates from the configuration path"""
+    template_compiler = Compiler()
+
+    def _load(template):
+        template_path = os.path.join(templates_path, f"{template}.yaml")
+        file_content = io.read(template_path)
+        return template_compiler.compile(file_content)
+
+    return {template: _load(template) for template in template_names}
 
 
 def get_anti_affinity_node(app_config: dict, process_name: str, templates: dict) -> Optional[dict]:

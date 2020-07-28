@@ -15,3 +15,14 @@ class TestK8sConfig(TestCase):
         del os.environ["NESTOR_K8S_HTTP_PROXY"]
         with self.assertRaises(KeyError):
             K8sConfiguration.get_http_proxy()
+
+    @patch.dict(os.environ, {"NESTOR_K8S_TEMPLATE_FOLDER": ""})
+    def test_get_templates_dir_default(self):
+        del os.environ["NESTOR_K8S_TEMPLATE_FOLDER"]
+        template_dir = K8sConfiguration.get_templates_dir()
+        self.assertEqual(template_dir, "templates")
+
+    @patch.dict(os.environ, {"NESTOR_K8S_TEMPLATE_FOLDER": "custom"})
+    def test_get_templates_dir_configured(self):
+        template_dir = K8sConfiguration.get_templates_dir()
+        self.assertEqual(template_dir, "custom")
