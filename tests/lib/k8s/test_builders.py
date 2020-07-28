@@ -46,10 +46,9 @@ class TestK8sBuilders(TestCase):
     def test_load_templates(self, io_mock):
         """Should load the templates and correctly substitute `{{variable}}`"""
 
-        def _read_mock(file_name):
-            return f"file: {file_name}\n" + "template: {{variable}}\n"
-
-        io_mock.read.side_effect = _read_mock
+        io_mock.read.side_effect = (
+            lambda file_name: f"file: {file_name}\n" + "template: {{variable}}\n"
+        )
 
         templates = k8s_builders.load_templates("/path", ["template_a", "template_b"])
         result_a = templates["template_a"]({"variable": "value_a"})
