@@ -68,16 +68,16 @@ def get_project_config(config_path: str = Configuration.get_config_path()) -> di
     return _resolve_variables_deep(project_config)
 
 
-def get_deployments_configs(project_config: dict) -> list:
+def get_deployments(project_config: dict) -> list:
     """Get the deployments configurations from the project configuration."""
-    deployments_configs = []
+    deployments = []
     for deployment in project_config["deployments"]:
         config = dict_utils.deep_merge(project_config, deployment)
         del config["deployments"]
         config = _resolve_variables_deep(config)
-        deployments_configs.append(config)
+        deployments.append(config)
 
-    return deployments_configs
+    return deployments
 
 
 def _resolve_variable(template: str, variables: dict, path: str) -> str:

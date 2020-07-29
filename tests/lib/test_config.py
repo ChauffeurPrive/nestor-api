@@ -127,7 +127,7 @@ class TestConfigLibrary(unittest.TestCase):
             cronjobs, [{"name": "cleaner", "start_command": "./clean", "is_cronjob": True,}]
         )
 
-    def test_get_deployments_config(self, _io_mock):
+    def test_get_deployments(self, _io_mock):
         project_config = {
             "project": "my-project",
             "spec": {"spec_1": "default_spec_1", "spec_2": "default_spec_2",},
@@ -137,7 +137,7 @@ class TestConfigLibrary(unittest.TestCase):
             ],
         }
 
-        deployments = config.get_deployments_configs(project_config)
+        deployments = config.get_deployments(project_config)
 
         self.assertEqual(
             deployments,
