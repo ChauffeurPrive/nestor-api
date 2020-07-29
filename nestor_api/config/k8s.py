@@ -2,7 +2,6 @@
 import os
 
 
-# pylint: disable=too-few-public-methods
 class K8sConfiguration:
     """k8s configuration"""
 
@@ -10,3 +9,8 @@ class K8sConfiguration:
     def get_http_proxy() -> str:
         """Returns the k8s http proxy"""
         return os.environ["NESTOR_K8S_HTTP_PROXY"]
+
+    @staticmethod
+    def get_templates_dir() -> str:
+        """Returns the subfolder in which the k8s templates are stored."""
+        return os.getenv("NESTOR_K8S_TEMPLATE_FOLDER", "templates")

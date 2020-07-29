@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import nestor_api.lib.k8s.builders as k8s_builders
 import tests.__fixtures__.k8s as k8s_fixtures
@@ -41,6 +41,24 @@ class TestK8sBuilders(TestCase):
             "hpa": check_hpa,
             "namespace": check_namespace,
         }
+
+    @patch("nestor_api.lib.k8s.builders.io", autospec=True)
+    def test_load_templates(self, io_mock):
+        """Should load the templates and correctly substitute `{{variable}}`."""
+
+        io_mock.read.side_effect = (
+            lambda file_name: f"file: {file_name}\n" + "template: {{variable}}\n"
+        )
+
+        templates = k8s_builders.load_templates("/path", ["template_a", "template_b"])
+        result_a = templates["template_a"]({"variable": "value_a"})
+        result_b = templates["template_b"]({"variable": "value_b"})
+
+        io_mock.read.assert_has_calls(
+            [call("/path/template_a.yaml"), call("/path/template_b.yaml")]
+        )
+        self.assertEqual(result_a, "file: /path/template_a.yaml\ntemplate: value_a\n")
+        self.assertEqual(result_b, "file: /path/template_b.yaml\ntemplate: value_b\n")
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_not_enabled_default(self, parse_yaml_mock):
