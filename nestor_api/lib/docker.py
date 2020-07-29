@@ -52,6 +52,11 @@ def get_registry_image_tag(app_name: str, image_tag: str, registry: dict) -> str
     return f"{registry['organization']}/{app_name}:{image_tag}"
 
 
+def get_version_from_image_tag(image_tag: str) -> str:
+    """Returns the image version from an image tag"""
+    return image_tag.split(":")[1]
+
+
 def push(app_name: str, image_tag: str, app_config: dict) -> None:
     """Push an image to the configured docker registry"""
     if not has_docker_image(app_name, image_tag):

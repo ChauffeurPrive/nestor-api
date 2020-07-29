@@ -99,6 +99,11 @@ class TestDockerLib(TestCase):
         )
         self.assertEqual(registry_image_tag, "my-organization/my-app:my-tag")
 
+    def test_get_version_from_image_tag(self):
+        image_tag = "organization/project-name:0.0.0-sha-1a2bc34d"
+        version = docker.get_version_from_image_tag(image_tag)
+        self.assertEqual(version, "0.0.0-sha-1a2bc34d")
+
     @patch("nestor_api.lib.docker.io", autospec=True)
     def test_has_docker_image_existing(self, io_mock):
         io_mock.execute.return_value = "001122334455"
