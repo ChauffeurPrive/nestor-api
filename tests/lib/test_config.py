@@ -127,6 +127,34 @@ class TestConfigLibrary(unittest.TestCase):
             cronjobs, [{"name": "cleaner", "start_command": "./clean", "is_cronjob": True,}]
         )
 
+    def test_get_deployments_config(self, _io_mock):
+        project_config = {
+            "project": "my-project",
+            "spec": {"spec_1": "default_spec_1", "spec_2": "default_spec_2",},
+            "deployments": [
+                {"cluster": "cluster_1", "spec": {"spec_1": "spec_deployment_1"}},
+                {"cluster": "cluster_2", "spec": {"spec_2": "spec_deployment_2"}},
+            ],
+        }
+
+        deployments = config.get_deployments_configs(project_config)
+
+        self.assertEqual(
+            deployments,
+            [
+                {
+                    "cluster": "cluster_1",
+                    "project": "my-project",
+                    "spec": {"spec_1": "spec_deployment_1", "spec_2": "default_spec_2"},
+                },
+                {
+                    "cluster": "cluster_2",
+                    "project": "my-project",
+                    "spec": {"spec_1": "default_spec_1", "spec_2": "spec_deployment_2"},
+                },
+            ],
+        )
+
     @patch("yaml_lib.read_yaml", autospec=True)
     @patch("nestor_api.lib.config.Configuration", autospec=True)
     def test_get_project_config(self, configuration_mock, read_yaml_mock, io_mock):
