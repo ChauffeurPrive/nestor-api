@@ -55,7 +55,7 @@ def are_step_hashes_equal(app_dir: str, branch1: str, branch2: str) -> bool:
 
 
 def get_previous_step(project_config: dict, target: str) -> Optional[str]:
-    """ Returns the previous step in the defined workflow """
+    """ Returns the previous step in the defined workflow."""
     index = project_config["workflow"].index(target)
     if index > 0:
         return project_config["workflow"][index - 1]
@@ -127,7 +127,7 @@ def _create_and_protect_branch(
     user_login: str,
     git_provider: AbstractGitProvider,
 ) -> Dict[str, Tuple[bool, bool]]:
-    """Try to create and protect a branch on a repository"""
+    """Try to create and protect a branch on a repository."""
     report = {}
     branch = git_provider.get_branch(organization, app_name, branch_name)
     if branch is not None:
