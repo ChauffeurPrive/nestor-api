@@ -5,7 +5,7 @@ from unittest import TestCase
 import yaml_lib
 
 
-class TestCustomYamlLoader(TestCase):
+class TestLoadYaml(TestCase):
     def test_parse_yaml(self):
         """Assert that parse_yaml can parse a valid yaml"""
         yaml_fixture_path = Path(
