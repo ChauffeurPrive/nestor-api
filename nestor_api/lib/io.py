@@ -8,14 +8,7 @@ from random import random
 import shutil
 import subprocess
 
-import yaml
-
 from nestor_api.config.config import Configuration
-
-
-def convert_to_yaml(data: dict) -> str:
-    """Converts a dictionary into a valid yaml string"""
-    return yaml.safe_dump(data)
 
 
 def copy(source: str, destination: str) -> None:

@@ -3,7 +3,7 @@
 import copy
 
 
-def deep_merge(destination: dict, source: dict) -> dict:
+def deep_merge(destination: dict, source: dict, concat_lists: bool = False) -> dict:
     """Recursively add all keys from `source` into `destination`.
 
     Example:
@@ -17,6 +17,8 @@ def deep_merge(destination: dict, source: dict) -> dict:
         for key in src:
             if isinstance(dest.get(key), dict) and isinstance(src[key], dict):
                 dest[key] = _deep_merge_rec(dest[key], src[key])
+            elif isinstance(dest.get(key), list) and isinstance(src[key], list) and concat_lists:
+                dest[key].extend(src[key])
             else:
                 dest[key] = src[key]
         return dest

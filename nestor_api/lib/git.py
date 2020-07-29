@@ -31,6 +31,32 @@ def create_working_repository(app_name: str, git_url: str) -> str:
     return repository_dir
 
 
+def get_commit_hash_from_tag(repository_dir: str, tag_name: str) -> str:
+    """Returns the commit hash associated to the given tag"""
+    return io.execute(f"git rev-list -1 {tag_name}", repository_dir)
+
+
+def get_commits_between_tags(repository_dir: str, tag_old: str, tag_new: str) -> list:
+    """Get the commits between two tags (ordered with the newest first)."""
+    output = io.execute(
+        f"git log --oneline --no-decorate refs/tags/{tag_old}..refs/tags/{tag_new}", repository_dir
+    )
+
+    commits = []
+    for line in output.splitlines():
+        commit = {}
+        split_idx = line.find(" ")
+        commit["hash"] = line[:split_idx]
+        commit["message"] = line[split_idx + 1 :]
+        commits.append(commit)
+    return commits
+
+
+def get_last_commit_hash(repository_dir: str, reference: str = "HEAD") -> str:
+    """Retrieves the last commit hash of a repository (locally)"""
+    return io.execute(f"git rev-parse --short {reference}", repository_dir)
+
+
 def get_last_tag(repository_dir: str) -> str:
     """Retrieves the last tag of a repository (locally)"""
     return io.execute("git describe --always --abbrev=0", repository_dir)
@@ -39,16 +65,6 @@ def get_last_tag(repository_dir: str) -> str:
 def get_remote_url(repository_dir: str, remote_name: str = "origin") -> str:
     """Retrieves the remote url of a repository"""
     return io.execute(f"git remote get-url {remote_name}", repository_dir)
-
-
-def get_last_commit_hash(repository_dir: str, reference: str = "HEAD") -> str:
-    """Retrieves the last commit hash of a repository (locally)"""
-    return io.execute(f"git rev-parse --short {reference}", repository_dir)
-
-
-def get_commit_hash_from_tag(repository_dir: str, tag_name: str) -> str:
-    """Returns the commit hash associated to the given tag"""
-    return io.execute(f"git rev-list -1 {tag_name}", repository_dir)
 
 
 def push(repository_dir: str, branch_name: str = "HEAD") -> None:

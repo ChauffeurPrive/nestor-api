@@ -46,6 +46,28 @@ class TestGitLibrary(TestCase):
         )
         self.assertEqual(repository_dir, "/fixtures-nestor-work/my-app-11111111111111")
 
+    def test_get_commits_between_tags(self, io_mock):
+        io_mock.execute.return_value = (
+            "a1b1c1d Last known revision\n"
+            + "a2b2c2d An older revision\n"
+            + "a3b3c3d An even older revision\n"
+        )
+
+        commits = git.get_commits_between_tags("/path_to/a_git_repository", "old_tag", "new_tag")
+
+        io_mock.execute.assert_called_once_with(
+            "git log --oneline --no-decorate refs/tags/old_tag..refs/tags/new_tag",
+            "/path_to/a_git_repository",
+        )
+        self.assertEqual(
+            commits,
+            [
+                {"hash": "a1b1c1d", "message": "Last known revision"},
+                {"hash": "a2b2c2d", "message": "An older revision"},
+                {"hash": "a3b3c3d", "message": "An even older revision"},
+            ],
+        )
+
     def test_get_last_commit_hash_without_reference(self, io_mock):
         io_mock.execute.return_value = "1ab2c3d"
 

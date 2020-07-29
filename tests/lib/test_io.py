@@ -11,21 +11,6 @@ import nestor_api.lib.io as io
 
 
 class TestIoLib(TestCase):
-    def test_convert_to_yaml(self):
-        dictionary_to_convert = {
-            "name": "John Doe",
-            "contact": {"phone": 1234567890, "mail": "john@doe.com"},
-            "items": ["items1", "items2"],
-        }
-
-        yaml = io.convert_to_yaml(dictionary_to_convert)
-
-        self.assertEqual(
-            yaml,
-            "contact:\n  mail: john@doe.com\n  phone: 1234567890\nitems:\n- "
-            "items1\n- items2\nname: John Doe\n",
-        )
-
     @patch("nestor_api.lib.io.shutil", autospec=True)
     def test_copy_single_file(self, shutil_mock):
         shutil_mock.copytree.side_effect = OSError(errno.ENOTDIR, "some reason")
