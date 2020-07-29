@@ -44,7 +44,7 @@ class TestK8sBuilders(TestCase):
 
     @patch("nestor_api.lib.k8s.builders.io", autospec=True)
     def test_load_templates(self, io_mock):
-        """Should load the templates and correctly substitute `{{variable}}`"""
+        """Should load the templates and correctly substitute `{{variable}}`."""
 
         io_mock.read.side_effect = (
             lambda file_name: f"file: {file_name}\n" + "template: {{variable}}\n"

@@ -24,13 +24,14 @@ TEMPLATES = [
 
 
 def _load_template(templates_path: str, template_compiler: Compiler, template_name: str):
+    """Load a single handlebar template."""
     template_path = os.path.join(templates_path, f"{template_name}.yaml")
     file_content = io.read(template_path)
     return template_compiler.compile(file_content)
 
 
 def load_templates(templates_path: str, template_names: list) -> dict:
-    """Load the templates from the configuration path"""
+    """Load the templates from the configuration path."""
     template_compiler = Compiler()
     return {
         template: _load_template(templates_path, template_compiler, template)
@@ -39,7 +40,7 @@ def load_templates(templates_path: str, template_names: list) -> dict:
 
 
 def get_anti_affinity_node(app_config: dict, process_name: str, templates: dict) -> Optional[dict]:
-    """Return the anti affinity for node configuration"""
+    """Return the anti affinity for node configuration."""
     app_name = app_config["app"]
     is_anti_affinity_node_default_enabled = app_config["affinity"]["default"][
         "is_anti_affinity_node_enabled"
@@ -59,7 +60,7 @@ def get_anti_affinity_node(app_config: dict, process_name: str, templates: dict)
 
 
 def get_anti_affinity_zone(app_config: dict, process_name: str, templates: dict) -> Optional[dict]:
-    """Return the anti affinity for zone configuration"""
+    """Return the anti affinity for zone configuration."""
     app_name = app_config["app"]
     is_anti_affinity_zone_default_enabled = app_config["affinity"]["default"][
         "is_anti_affinity_zone_enabled"
@@ -79,13 +80,13 @@ def get_anti_affinity_zone(app_config: dict, process_name: str, templates: dict)
 
 
 def get_image_name(app_config: dict, options: dict):
-    """Returns the definitive image name"""
+    """Returns the definitive image name."""
     image_tag = options["branch"] if "branch" in options else options["tag"]
     return docker.get_registry_image_tag(app_config["app"], image_tag, app_config["registry"])
 
 
 def get_probes(probes_config: dict, port: int):
-    """Returns probes definition"""
+    """Returns probes definition."""
     # The probes configuration can either be unique or specific for liveness and readiness,
     # If it is unique, `probes_config` contains the config for both probes
     liveness_probe_config = probes_config.get("liveness")
@@ -131,7 +132,7 @@ def get_sanitized_names(app_config: dict, process_name: str):
 
 
 def get_secret_variables(app_config: dict) -> dict:
-    """Returns the secret variables from configuration"""
+    """Returns the secret variables from configuration."""
     secret_variables = app_config.get("variables", {}).get("secret", {})
 
     formatted_secret_variables = {
@@ -164,7 +165,7 @@ def get_variables(app_config: dict) -> dict:
 
 
 def set_namespace(app_config: dict, resources: list, templates: dict) -> Optional[dict]:
-    """Attach the expected namespace to the deployment and return the namespace"""
+    """Attach the expected namespace to the deployment and return the namespace."""
     namespace = None
     namespace_name = app_config.get("namespace")
 
@@ -181,7 +182,7 @@ def set_replicas(
     app_config: dict, process_name: str, recipe: dict, templates: dict
 ) -> Optional[dict]:
     """Attach the correct Replicas values to the recipe object and return the corresponding
-    `hpa` if applicable"""
+    `hpa` if applicable."""
     scales = app_config["scales"]
     scales_config = scales[process_name] if process_name in scales else scales["default"]
     min_replicas = scales_config.get(
@@ -217,7 +218,7 @@ def set_replicas(
 
 
 def set_resources(app_config: dict, process_name: str, recipe: dict) -> None:
-    """Attach the expected resources to the kubernetes recipe"""
+    """Attach the expected resources to the kubernetes recipe."""
     resources = app_config.get("resources", {})
     resources_config = (
         resources[process_name] if process_name in resources else resources.get("default")
