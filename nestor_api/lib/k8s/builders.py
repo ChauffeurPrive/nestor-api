@@ -23,16 +23,19 @@ TEMPLATES = [
 ]
 
 
+def _load_template(templates_path: str, template_compiler: Compiler, template_name: str):
+    template_path = os.path.join(templates_path, f"{template_name}.yaml")
+    file_content = io.read(template_path)
+    return template_compiler.compile(file_content)
+
+
 def load_templates(templates_path: str, template_names: list) -> dict:
     """Load the templates from the configuration path"""
     template_compiler = Compiler()
-
-    def _load(template):
-        template_path = os.path.join(templates_path, f"{template}.yaml")
-        file_content = io.read(template_path)
-        return template_compiler.compile(file_content)
-
-    return {template: _load(template) for template in template_names}
+    return {
+        template: _load_template(templates_path, template_compiler, template)
+        for template in template_names
+    }
 
 
 def get_anti_affinity_node(app_config: dict, process_name: str, templates: dict) -> Optional[dict]:
