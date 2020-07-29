@@ -12,5 +12,5 @@ class K8sConfiguration:
 
     @staticmethod
     def get_templates_dir() -> str:
-        """Returns the name of the config sub-folder in which to look for templates."""
+        """Returns the subfolder in which the k8s templates are stored."""
         return os.getenv("NESTOR_K8S_TEMPLATE_FOLDER", "templates")
