@@ -55,3 +55,19 @@ hpa = {
         "targetCPUUtilizationPercentage": 75,
     },
 }
+
+# probes
+probes = {
+    "livenessProbe": {
+        "httpGet": {"path": "/heartbeat", "port": 8080},
+        "initialDelaySeconds": 10,
+        "periodSeconds": 10,
+        "timeoutSeconds": 2,
+    },
+    "readinessProbe": {
+        "httpGet": {"path": "/heartbeat", "port": 8080},
+        "initialDelaySeconds": 5,
+        "periodSeconds": 5,
+        "timeoutSeconds": 1,
+    },
+}
