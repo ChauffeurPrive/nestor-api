@@ -16,6 +16,17 @@ class TestK8sConfig(TestCase):
         with self.assertRaises(KeyError):
             K8sConfiguration.get_http_proxy()
 
+    @patch.dict(os.environ, {"NESTOR_K8S_SERVICE_PORT": ""})
+    def test_get_service_port_default(self):
+        del os.environ["NESTOR_K8S_SERVICE_PORT"]
+        service_port = K8sConfiguration.get_service_port()
+        self.assertEqual(service_port, 8080)
+
+    @patch.dict(os.environ, {"NESTOR_K8S_SERVICE_PORT": "4242"})
+    def test_get_service_port_configured(self):
+        service_port = K8sConfiguration.get_service_port()
+        self.assertEqual(service_port, 4242)
+
     @patch.dict(os.environ, {"NESTOR_K8S_TEMPLATE_FOLDER": ""})
     def test_get_templates_dir_default(self):
         del os.environ["NESTOR_K8S_TEMPLATE_FOLDER"]

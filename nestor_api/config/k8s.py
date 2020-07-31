@@ -13,7 +13,7 @@ class K8sConfiguration:
     @staticmethod
     def get_service_port() -> int:
         """Returns the port to expose on the k8s services."""
-        return int(os.getenv("NESTOR_K8S_PORT", "8080"))
+        return int(os.getenv("NESTOR_K8S_SERVICE_PORT", "8080"))
 
     @staticmethod
     def get_templates_dir() -> str:
