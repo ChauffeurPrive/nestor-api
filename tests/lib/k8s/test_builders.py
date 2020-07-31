@@ -36,8 +36,8 @@ class TestK8sBuilders(TestCase):
             return "mock: template_namespace"
 
         return {
-            "anti_affinity_node": check_anti_affinity_node_template,
-            "anti_affinity_zone": check_anti_affinity_zone_template,
+            "anti-affinity-node": check_anti_affinity_node_template,
+            "anti-affinity-zone": check_anti_affinity_zone_template,
             "hpa": check_hpa,
             "namespace": check_namespace,
         }
@@ -176,17 +176,23 @@ class TestK8sBuilders(TestCase):
 
     def test_get_image_name_branch(self):
         """Returns the URL of the docker image if tag and branch are provided"""
-        app_config = {"app": "app", "registry": {"organization": "my-organization"}}
+        app_config = {
+            "app": "my-app",
+            "docker": {"registry": {"organization": "my-organization"}},
+        }
         image_url = k8s_builders.get_image_name(
             app_config, {"branch": "feature/api", "tag": "1.0.0-sha-a2b3c4"}
         )
-        self.assertEqual(image_url, "my-organization/app:feature/api")
+        self.assertEqual(image_url, "my-organization/my-app:feature/api")
 
     def test_get_image_name_tag(self):
         """Returns the URL of the docker image if only a tag is provided"""
-        app_config = {"app": "app", "registry": {"organization": "my-organization"}}
+        app_config = {
+            "app": "my-app",
+            "docker": {"registry": {"organization": "my-organization"}},
+        }
         image_url = k8s_builders.get_image_name(app_config, {"tag": "1.0.0-sha-a2b3c4"})
-        self.assertEqual(image_url, "my-organization/app:1.0.0-sha-a2b3c4")
+        self.assertEqual(image_url, "my-organization/my-app:1.0.0-sha-a2b3c4")
 
     def test_get_probes_both_configured(self):
         """Check that the configuration of probes is correct if both configured"""
@@ -342,6 +348,92 @@ class TestK8sBuilders(TestCase):
             variables, {"VARIABLE_1": "1111", "VARIABLE_2": "3333", "VARIABLE_3": "4444"}
         )
 
+    @patch("nestor_api.lib.k8s.builders.get_anti_affinity_zone", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.get_anti_affinity_node", autospec=True)
+    def test_set_anti_affinity_when_both_true(
+        self, get_anti_affinity_node_mock, get_anti_affinity_zone_mock
+    ):
+        """Should correctly merge both specs."""
+        get_anti_affinity_node_mock.return_value = k8s_fixtures.anti_affinity_node
+        get_anti_affinity_zone_mock.return_value = k8s_fixtures.anti_affinity_zone
+        deployment = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_anti_affinity({}, "web", deployment, {})
+
+        self.assertEqual(
+            deployment["spec"]["template"]["spec"]["affinity"],
+            {
+                "podAntiAffinity": {
+                    "preferredDuringSchedulingIgnoredDuringExecution": [
+                        {
+                            "weight": 1,
+                            "podAffinityTerm": {
+                                "labelSelector": {
+                                    "matchExpressions": [
+                                        {"key": "app", "operator": "In", "values": ["app-name"]},
+                                        {
+                                            "key": "process",
+                                            "operator": "In",
+                                            "values": ["proc-name"],
+                                        },
+                                    ],
+                                },
+                                "topologyKey": "kubernetes.io/hostname",
+                            },
+                        },
+                        {
+                            "weight": 1,
+                            "podAffinityTerm": {
+                                "labelSelector": {
+                                    "matchExpressions": [
+                                        {"key": "app", "operator": "In", "values": ["app-name"]},
+                                        {
+                                            "key": "process",
+                                            "operator": "In",
+                                            "values": ["proc-name"],
+                                        },
+                                    ],
+                                },
+                                "topologyKey": "failure-domain.beta.kubernetes.io/zone",
+                            },
+                        },
+                    ],
+                },
+            },
+        )
+
+    @patch("nestor_api.lib.k8s.builders.get_anti_affinity_zone", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.get_anti_affinity_node", autospec=True)
+    def test_set_anti_affinity_when_both_false(
+        self, get_anti_affinity_node_mock, get_anti_affinity_zone_mock
+    ):
+        """Should not add the section to the spec."""
+        get_anti_affinity_node_mock.return_value = None
+        get_anti_affinity_zone_mock.return_value = None
+        resource = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_anti_affinity({}, "web", resource, {})
+
+        self.assertEqual(resource, {"spec": {"template": {"spec": {}}}})
+
+    def test_set_command(self):
+        """Should correctly set the process' command to the resource."""
+        process = {"start_command": "npm start"}
+        resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
+
+        k8s_builders.set_command(process, resource)
+
+        self.assertEqual(
+            resource,
+            {
+                "spec": {
+                    "template": {
+                        "spec": {"containers": [{"args": ["/bin/bash", "-c", "npm start"]}]},
+                    },
+                },
+            },
+        )
+
     def test_set_namespace_no_namespace(self):
         """Return None if no namespace in config and should not modify resources definition"""
         app_config = {}
@@ -357,6 +449,47 @@ class TestK8sBuilders(TestCase):
         self.assertEqual(namespace, None)
         self.assertEqual(
             resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}},]
+        )
+
+    @patch("nestor_api.lib.k8s.builders.K8sConfiguration", autospec=True)
+    def test_set_environment_variables(self, config_mock):
+        """Should correctly attach the environment variables."""
+        config_mock.get_service_port.return_value = 4242
+        deployment_config = {
+            "variables": {
+                "app": {"APP_VAR_1": "app_var_1", "APP_VAR_2": "app_var_2",},
+                "ope": {
+                    "PORT": "1234",  # should be overridden
+                    "OPE_VAR_1": "ope_var_1",
+                    "OPE_VAR_2": "ope_var_2",
+                },
+                "secret": {
+                    "SECRET_VAR_1": {"name": "secret-name", "key": "SECRET_VAR_1"},
+                    "SECRET_VAR_2": {"name": "secret-name", "key": "SECRET_VAR_2"},
+                },
+            },
+        }
+        resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
+
+        k8s_builders.set_environment_variables(deployment_config, resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"]["containers"][0]["env"],
+            [
+                {"name": "APP_VAR_1", "value": "app_var_1"},
+                {"name": "APP_VAR_2", "value": "app_var_2"},
+                {"name": "PORT", "value": "4242"},
+                {"name": "OPE_VAR_1", "value": "ope_var_1"},
+                {"name": "OPE_VAR_2", "value": "ope_var_2"},
+                {
+                    "name": "SECRET_VAR_1",
+                    "valueFrom": {"secretKeyRef": {"key": "SECRET_VAR_1", "name": "secret-name"}},
+                },
+                {
+                    "name": "SECRET_VAR_2",
+                    "valueFrom": {"secretKeyRef": {"key": "SECRET_VAR_2", "name": "secret-name"}},
+                },
+            ],
         )
 
     @patch("yaml_lib.parse_yaml", autospec=True)
@@ -382,6 +515,119 @@ class TestK8sBuilders(TestCase):
                 {"metadata": {"name": "deployment", "namespace": "namespace"}},
             ],
         )
+
+    def test_set_node_selector_configured(self):
+        """Should use the configured node selector from the configuration."""
+        deployment_config = {"nodeSelector": {"my-process": {"tier": "app"}}}
+        resource = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_node_selector(deployment_config, "my-process", resource)
+
+        self.assertEqual(resource["spec"]["template"]["spec"]["nodeSelector"], {"tier": "app"})
+
+    def test_set_node_selector_default(self):
+        """Should use the default node selector from the configuration."""
+        deployment_config = {"nodeSelector": {"default": {"tier": "app"}}}
+        resource = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_node_selector(deployment_config, "my-process-not-configured", resource)
+
+        self.assertEqual(resource["spec"]["template"]["spec"]["nodeSelector"], {"tier": "app"})
+
+    def test_set_node_selector_none(self):
+        """Should not set the node selector if none is found in the configuration."""
+        deployment_config = {"nodeSelector": {}}
+        resource = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_node_selector(deployment_config, "my-process", resource)
+
+        self.assertEqual(resource["spec"]["template"]["spec"], {})
+
+    @patch("nestor_api.lib.k8s.builders.get_probes", autospec=True)
+    def test_set_probes_configured(self, get_probes_mock):
+        """Should attach the probes to the resource."""
+        get_probes_mock.return_value = k8s_fixtures.probes
+        deployment_config = {"probes": {"my-process": {}}}
+        resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
+
+        k8s_builders.set_probes(deployment_config, "my-process", resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"]["containers"][0],
+            {
+                "livenessProbe": {
+                    "httpGet": {"path": "/heartbeat", "port": 8080},
+                    "initialDelaySeconds": 10,
+                    "periodSeconds": 10,
+                    "timeoutSeconds": 2,
+                },
+                "readinessProbe": {
+                    "httpGet": {"path": "/heartbeat", "port": 8080},
+                    "initialDelaySeconds": 5,
+                    "periodSeconds": 5,
+                    "timeoutSeconds": 1,
+                },
+            },
+        )
+
+    @patch("nestor_api.lib.k8s.builders.get_probes", autospec=True)
+    def test_set_probes_only_liveness_configured(self, get_probes_mock):
+        """Should attach the liveness probes to the resource."""
+        get_probes_mock.return_value = {
+            "livenessProbe": k8s_fixtures.probes["livenessProbe"],
+        }
+        deployment_config = {"probes": {"my-process": {}}}
+        resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
+
+        k8s_builders.set_probes(deployment_config, "my-process", resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"]["containers"][0],
+            {
+                "livenessProbe": {
+                    "httpGet": {"path": "/heartbeat", "port": 8080},
+                    "initialDelaySeconds": 10,
+                    "periodSeconds": 10,
+                    "timeoutSeconds": 2,
+                },
+            },
+        )
+
+    @patch("nestor_api.lib.k8s.builders.get_probes", autospec=True)
+    def test_set_probes_only_readiness_configured(self, get_probes_mock):
+        """Should attach the readiness probes to the resource."""
+        get_probes_mock.return_value = {
+            "readinessProbe": k8s_fixtures.probes["readinessProbe"],
+        }
+        deployment_config = {"probes": {"my-process": {}}}
+        resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
+
+        k8s_builders.set_probes(deployment_config, "my-process", resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"]["containers"][0],
+            {
+                "readinessProbe": {
+                    "httpGet": {"path": "/heartbeat", "port": 8080},
+                    "initialDelaySeconds": 5,
+                    "periodSeconds": 5,
+                    "timeoutSeconds": 1,
+                },
+            },
+        )
+
+    @patch("nestor_api.lib.k8s.builders.get_probes", autospec=True)
+    def test_set_probes_not_configured(self, get_probes_mock):
+        """Should not attach the probes to the resource if not configured."""
+        deployment_config = {"probes": {}}
+        resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
+
+        k8s_builders.set_probes(deployment_config, "my-process", resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"]["containers"][0], {},
+        )
+        get_probes_mock.assert_not_called()
 
     def test_set_replicas_min_replicas_zero(self):
         """Return None and set replicas to 0 in the recipe"""
@@ -599,4 +845,27 @@ class TestK8sBuilders(TestCase):
                     }
                 },
             },
+        )
+
+    def test_set_secret_configured(self):
+        """Should attach the configured secret to the resource."""
+        deployment_config = {"secret": "secret-registry"}
+        resource = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_secret(deployment_config, resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"],
+            {"imagePullSecrets": [{"name": "secret-registry"}]},
+        )
+
+    def test_set_secret_not_configured(self):
+        """Should not attach the secret if none configured."""
+        deployment_config = {}
+        resource = {"spec": {"template": {"spec": {}}}}
+
+        k8s_builders.set_secret(deployment_config, resource)
+
+        self.assertEqual(
+            resource["spec"]["template"]["spec"], {},
         )
