@@ -1,6 +1,7 @@
 """k8s deployment file builders"""
 
 import os
+import time
 from typing import Optional, Tuple
 
 from pybars import Compiler  # type: ignore
@@ -8,10 +9,32 @@ from pybars import Compiler  # type: ignore
 from nestor_api.config.k8s import K8sConfiguration
 from nestor_api.config.probes import ProbesDefaultConfiguration
 from nestor_api.config.replicas import ReplicasDefaultConfiguration
+import nestor_api.lib.config as config
 import nestor_api.lib.docker as docker
 import nestor_api.lib.io as io
 import nestor_api.utils.dict as dict_utils
+import nestor_api.utils.list as list_utils
 import yaml_lib
+
+
+def build_yaml(deployment_config: dict, templates_path: str, tag_to_deploy: str) -> str:
+    """Builds the deployment.yaml corresponding to the provided k8s deployment configuration."""
+    templates = load_templates(templates_path, TEMPLATES)
+
+    yaml_sections = []
+
+    processes = config.get_processes(deployment_config)
+    for process in processes:
+        sections = get_sections_for_process(process, deployment_config, tag_to_deploy, templates)
+        yaml_sections.extend(sections)
+
+    cronjobs = config.get_cronjobs(deployment_config)
+    for cronjob in cronjobs:
+        sections = get_sections_for_cronjob(cronjob, deployment_config, tag_to_deploy, templates)
+        yaml_sections.extend(sections)
+
+    return "\n".join(yaml_sections)
+
 
 TEMPLATES = [
     "deployment",
@@ -39,6 +62,143 @@ def load_templates(templates_path: str, template_names: list) -> dict:
         template: _load_template(templates_path, template_compiler, template)
         for template in template_names
     }
+
+
+def get_sections_for_process(
+    process: dict, deployment_config: dict, tag_to_deploy: str, templates: dict
+) -> list:
+    """Build the deployment sections of a process."""
+    process_name = process["name"]
+    app_name, sanitized_process_name, metadata_name = get_sanitized_names(
+        deployment_config, process_name
+    )
+    image_name = get_image_name(deployment_config, {"tag": tag_to_deploy})
+
+    deployment_sections = []
+
+    if process_name == "web":
+        web_service = yaml_lib.parse_yaml(
+            templates["service"](
+                {
+                    "app": app_name,
+                    "name": app_name,
+                    "image": image_name,
+                    "target_port": K8sConfiguration.get_service_port(),
+                    **deployment_config.get("templateVars", {}),
+                }
+            )
+        )
+        deployment_sections.append(web_service)
+
+    deployment = yaml_lib.parse_yaml(
+        templates["deployment"](
+            {
+                "app": app_name,
+                "name": metadata_name,
+                "image": image_name,
+                "process": sanitized_process_name,
+                "project": deployment_config["project"],
+                **deployment_config.get("templateVars", {}),
+            }
+        )
+    )
+
+    timestamp = round(time.time() * 1000)  # timestamp in milliseconds
+    deployment["spec"]["template"]["metadata"]["annotations"] = {"date": str(timestamp)}
+
+    set_secret(deployment_config, deployment)
+
+    hpa = set_replicas(deployment_config, process_name, deployment, templates)
+    if hpa:
+        deployment_sections.append(hpa)
+
+    set_anti_affinity(deployment_config, process_name, deployment, templates)
+
+    set_node_selector(deployment_config, process_name, deployment)
+
+    set_resources(deployment_config, process_name, deployment)
+
+    set_command(process, deployment)
+
+    set_probes(deployment_config, process_name, deployment)
+
+    deployment["spec"]["template"]["spec"]["containers"][0]["ports"] = [
+        {"containerPort": K8sConfiguration.get_service_port()}
+    ]
+
+    set_environment_variables(deployment_config, deployment)
+
+    deployment_sections.append(deployment)
+
+    namespace = set_namespace(deployment_config, deployment_sections, templates)
+    if namespace:
+        deployment_sections.insert(0, namespace)
+
+    return list_utils.flatten(
+        [["---", yaml_lib.convert_to_yaml(section)] for section in deployment_sections]
+    )
+
+
+def get_sections_for_cronjob(
+    process: dict, deployment_config: dict, tag_to_deploy: str, templates: dict
+) -> list:
+    """Build the deployment sections of a cronjob."""
+    process_name = process["name"]
+    app_name, sanitized_process_name, metadata_name = get_sanitized_names(
+        deployment_config, process_name
+    )
+    image_name = get_image_name(deployment_config, {"tag": tag_to_deploy})
+
+    cronjob_sections = []
+
+    cronjob = yaml_lib.parse_yaml(
+        templates["cronjob"](
+            {
+                "app": app_name,
+                "name": metadata_name,
+                "image": image_name,
+                "process": sanitized_process_name,
+                "project": deployment_config["project"],
+                **deployment_config.get("templateVars", {}),
+            }
+        )
+    )
+    cronjob["spec"]["schedule"] = deployment_config["crons"][process_name]["schedule"]
+    cronjob["spec"]["concurrencyPolicy"] = deployment_config["crons"][process_name][
+        "concurrency_policy"
+    ]
+
+    job = yaml_lib.parse_yaml(
+        templates["job"](
+            {
+                "app": app_name,
+                "name": metadata_name,
+                "image": image_name,
+                "process": sanitized_process_name,
+                "project": deployment_config["project"],
+            }
+        )
+    )
+
+    set_secret(deployment_config, job)
+
+    set_resources(deployment_config, process_name, job)
+
+    set_command(process, job)
+
+    set_environment_variables(deployment_config, job)
+    set_node_selector(deployment_config, process_name, job)
+
+    cronjob["spec"]["jobTemplate"]["spec"] = job["spec"]
+    cronjob_sections.append(cronjob)
+
+    namespace = set_namespace(deployment_config, cronjob_sections, templates)
+    if namespace:
+        cronjob_sections.insert(0, namespace)
+
+    return list_utils.flatten(
+        [["---", yaml_lib.convert_to_yaml(section)] for section in cronjob_sections]
+    )
 
 
 def get_anti_affinity_node(
