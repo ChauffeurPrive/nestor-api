@@ -11,6 +11,11 @@ class K8sConfiguration:
         return os.environ["NESTOR_K8S_HTTP_PROXY"]
 
     @staticmethod
+    def get_service_port() -> int:
+        """Returns the port to expose on the k8s services."""
+        return int(os.getenv("NESTOR_K8S_PORT", "8080"))
+
+    @staticmethod
     def get_templates_dir() -> str:
         """Returns the subfolder in which the k8s templates are stored."""
         return os.getenv("NESTOR_K8S_TEMPLATE_FOLDER", "templates")

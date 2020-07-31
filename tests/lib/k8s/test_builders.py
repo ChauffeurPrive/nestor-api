@@ -177,49 +177,22 @@ class TestK8sBuilders(TestCase):
     def test_get_image_name_branch(self):
         """Returns the URL of the docker image if tag and branch are provided"""
         app_config = {
-            "app": "app",
-            "registry": {"platform": "docker-hub", "id": "id-1"},
-            "docker": {
-                "registries": {
-                    "docker-hub": [
-                        {"id": "id-1", "organization": "my-organization-1"},
-                        {"id": "id-2", "organization": "my-organization-2"},
-                    ],
-                },
-            },
+            "app": "my-app",
+            "docker": {"registry": {"organization": "my-organization"}},
         }
         image_url = k8s_builders.get_image_name(
             app_config, {"branch": "feature/api", "tag": "1.0.0-sha-a2b3c4"}
         )
-        self.assertEqual(image_url, "my-organization-1/app:feature/api")
+        self.assertEqual(image_url, "my-organization/my-app:feature/api")
 
     def test_get_image_name_tag(self):
         """Returns the URL of the docker image if only a tag is provided"""
         app_config = {
-            "app": "app",
-            "registry": {"platform": "docker-hub", "id": "id-1"},
-            "docker": {
-                "registries": {
-                    "docker-hub": [
-                        {"id": "id-1", "organization": "my-organization-1"},
-                        {"id": "id-2", "organization": "my-organization-2"},
-                    ],
-                },
-            },
+            "app": "my-app",
+            "docker": {"registry": {"organization": "my-organization"}},
         }
         image_url = k8s_builders.get_image_name(app_config, {"tag": "1.0.0-sha-a2b3c4"})
-        self.assertEqual(image_url, "my-organization-1/app:1.0.0-sha-a2b3c4")
-
-    def test_get_image_name_registry_not_found(self):
-        """Should throw if the registry is not in the configuration."""
-        app_config = {
-            "app": "app",
-            "registry": {"platform": "docker-hub", "id": "id-not-existing"},
-            "docker": {"registries": {"docker-hub": [],},},
-        }
-
-        with self.assertRaisesRegex(ValueError, 'No registry matching "id-not-existing"'):
-            k8s_builders.get_image_name(app_config, {"tag": "1.0.0-sha-a2b3c4"})
+        self.assertEqual(image_url, "my-organization/my-app:1.0.0-sha-a2b3c4")
 
     def test_get_probes_both_configured(self):
         """Check that the configuration of probes is correct if both configured"""
@@ -478,13 +451,15 @@ class TestK8sBuilders(TestCase):
             resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}},]
         )
 
-    def test_set_environment_variables(self):
+    @patch("nestor_api.lib.k8s.builders.K8sConfiguration", autospec=True)
+    def test_set_environment_variables(self, config_mock):
         """Should correctly attach the environment variables."""
+        config_mock.get_service_port.return_value = 4242
         deployment_config = {
             "variables": {
                 "app": {"APP_VAR_1": "app_var_1", "APP_VAR_2": "app_var_2",},
                 "ope": {
-                    "PORT": "4242",  # should be overridden
+                    "PORT": "1234",  # should be overridden
                     "OPE_VAR_1": "ope_var_1",
                     "OPE_VAR_2": "ope_var_2",
                 },
@@ -503,7 +478,7 @@ class TestK8sBuilders(TestCase):
             [
                 {"name": "APP_VAR_1", "value": "app_var_1"},
                 {"name": "APP_VAR_2", "value": "app_var_2"},
-                {"name": "PORT", "value": "8080"},
+                {"name": "PORT", "value": "4242"},
                 {"name": "OPE_VAR_1", "value": "ope_var_1"},
                 {"name": "OPE_VAR_2", "value": "ope_var_2"},
                 {

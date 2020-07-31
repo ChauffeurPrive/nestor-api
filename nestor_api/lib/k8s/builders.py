@@ -5,16 +5,13 @@ from typing import Optional, Tuple
 
 from pybars import Compiler  # type: ignore
 
+from nestor_api.config.k8s import K8sConfiguration
 from nestor_api.config.probes import ProbesDefaultConfiguration
 from nestor_api.config.replicas import ReplicasDefaultConfiguration
 import nestor_api.lib.docker as docker
 import nestor_api.lib.io as io
 import nestor_api.utils.dict as dict_utils
-import nestor_api.utils.list as list_utils
 import yaml_lib
-
-SERVICE_PORT = 8080
-
 
 TEMPLATES = [
     "deployment",
@@ -94,14 +91,8 @@ def get_anti_affinity_zone(
 
 def get_image_name(deployment_config: dict, options: dict) -> str:
     """Returns the definitive image name."""
-    image_name = deployment_config.get("docker", {}).get("image_name") or deployment_config["app"]
-
-    registry_ref = deployment_config["registry"]
-    registries = deployment_config["docker"]["registries"][registry_ref["platform"]]
-    registry = list_utils.find(registries, lambda reg: reg["id"] == registry_ref["id"])
-    if registry is None:
-        raise ValueError(f'No registry matching "{registry_ref["id"]}"')
-
+    image_name = deployment_config["docker"].get("image_name") or deployment_config["app"]
+    registry = deployment_config["docker"]["registry"]
     image_tag = options["branch"] if "branch" in options else options["tag"]
 
     return docker.get_registry_image_tag(image_name, image_tag, registry)
@@ -210,7 +201,7 @@ def set_environment_variables(deployment_config: dict, resource: dict) -> None:
     """Format and attach the environment variables to the resource."""
     secret_variables = get_secret_variables(deployment_config)
     variables = get_variables(deployment_config)
-    variables["PORT"] = str(SERVICE_PORT)
+    variables["PORT"] = str(K8sConfiguration.get_service_port())
 
     environment_variables = [{"name": key, "value": value} for key, value in variables.items()]
     environment_variables += [
@@ -246,7 +237,7 @@ def set_probes(deployment_config: dict, process_name: str, resource: dict) -> No
     """Attach the process' probes to the resource if configured."""
     if process_name in deployment_config["probes"]:
         probes_config = deployment_config["probes"][process_name]
-        probes = get_probes(probes_config, SERVICE_PORT)
+        probes = get_probes(probes_config, K8sConfiguration.get_service_port())
         if "livenessProbe" in probes:
             resource["spec"]["template"]["spec"]["containers"][0]["livenessProbe"] = probes[
                 "livenessProbe"
