@@ -24,7 +24,7 @@ def _differed_build(app_name: str):
         app_config = config.get_app_config(app_name, config_dir)
         Logger.debug(
             {"app": app_name, "config_directory": config_dir},
-            "[/api/builds/:app] Application's configuration retrieved",
+            "[/api/v1/builds/:app] Application's configuration retrieved",
         )
 
         # Retrieve app's repository
@@ -32,7 +32,7 @@ def _differed_build(app_name: str):
         git.branch(app_dir, app_config["workflow"][0])
         Logger.debug(
             {"app": app_name, "working_directory": app_dir},
-            "[/api/builds/:app] Application's repository retrieved",
+            "[/api/v1/builds/:app] Application's repository retrieved",
         )
 
         try:
@@ -40,33 +40,33 @@ def _differed_build(app_name: str):
             version = app.get_version(app_dir)
             git_tag = git.tag(app_dir, version)
             Logger.debug(
-                {"app": app_name, "tag": git_tag}, "[/api/builds/:app] New tag created",
+                {"app": app_name, "tag": git_tag}, "[/api/v1/builds/:app] New tag created",
             )
         except Exception as err:
             # The tag may already exist
             Logger.warn(
-                {"app": app_name, "err": err}, "[/api/builds/:app] Error while tagging the app"
+                {"app": app_name, "err": err}, "[/api/v1/builds/:app] Error while tagging the app"
             )
 
         # Build and publish the new docker image
         image_tag = docker.build(app_name, app_dir, app_config)
         Logger.debug(
-            {"app": app_name, "image": image_tag}, "[/api/builds/:app] Docker image created"
+            {"app": app_name, "image": image_tag}, "[/api/v1/builds/:app] Docker image created"
         )
         docker.push(app_name, image_tag, app_config)
         Logger.debug(
             {"app": app_name, "image": image_tag},
-            "[/api/builds/:app] Docker image published on registry",
+            "[/api/v1/builds/:app] Docker image published on registry",
         )
 
         # Send the new tag to git
         git.push(app_dir)
-        Logger.debug({"app": app_name}, "[/api/builds/:app] Tag pushed to Git")
+        Logger.debug({"app": app_name}, "[/api/v1/builds/:app] Tag pushed to Git")
 
     except Exception as err:
         Logger.error(
             {"app": app_name, "err": err},
-            "[/api/builds/:app] Error while tagging and building the app",
+            "[/api/v1/builds/:app] Error while tagging and building the app",
         )
 
     # Clean up temporary directories
@@ -76,13 +76,13 @@ def _differed_build(app_name: str):
         if app_dir is not None:
             io.remove(app_dir)
     except Exception as err:
-        Logger.error({"app": app_name, "err": err}, "[/api/builds/:app] Error during cleanup")
+        Logger.error({"app": app_name, "err": err}, "[/api/v1/builds/:app] Error during cleanup")
 
 
 def build_app(app_name: str):
     """Build the docker image of an application from the master branch with
     a unique tag and uploads it to the configured Docker registry."""
-    Logger.info({"app": app_name}, "[/api/builds/:app] Building an application image")
+    Logger.info({"app": app_name}, "[/api/v1/builds/:app] Building an application image")
 
     Thread(target=_differed_build, args=[app_name]).start()
 

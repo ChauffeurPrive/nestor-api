@@ -1,13 +1,14 @@
-"""Register all routes under the /api prefixes. The route /heartbeat is not included."""
-from flask import Blueprint
+"""
+    Register all routes for each apis under the /api prefixes.
+    The route /heartbeat is not included.
+"""
 
-from .api_routes import builds
+from nestor_api.api.api_routes.v1 import create_api_v1
 
 
-def create_api() -> Blueprint:
-    """Return the collection of routes and other app-related functions."""
-    api = Blueprint("api", __name__, url_prefix="/api")
+def get_apis() -> list:
+    """Return the list of apis to register."""
 
-    builds.register_routes(api=api)
-
-    return api
+    return [
+        create_api_v1(),
+    ]
