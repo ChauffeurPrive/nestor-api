@@ -451,10 +451,8 @@ class TestK8sBuilders(TestCase):
             resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}},]
         )
 
-    @patch("nestor_api.lib.k8s.builders.K8sConfiguration", autospec=True)
-    def test_set_environment_variables(self, config_mock):
+    def test_set_environment_variables(self):
         """Should correctly attach the environment variables."""
-        config_mock.get_service_port.return_value = 4242
         deployment_config = {
             "variables": {
                 "app": {"APP_VAR_1": "app_var_1", "APP_VAR_2": "app_var_2",},
@@ -471,7 +469,7 @@ class TestK8sBuilders(TestCase):
         }
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_environment_variables(deployment_config, resource)
+        k8s_builders.set_environment_variables(deployment_config, resource, 4242)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0]["env"],
@@ -550,7 +548,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {"my-process": {}}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0],
@@ -579,7 +577,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {"my-process": {}}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0],
@@ -602,7 +600,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {"my-process": {}}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0],
@@ -622,7 +620,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0], {},
@@ -869,3 +867,436 @@ class TestK8sBuilders(TestCase):
         self.assertEqual(
             resource["spec"]["template"]["spec"], {},
         )
+
+    @patch("nestor_api.lib.k8s.builders.load_templates", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.get_sections_for_cronjob", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.get_sections_for_process", autospec=True)
+    def test_build_yaml(
+        self, get_sections_for_process_mock, get_sections_for_cronjobs_mock, _load_templates_mock
+    ):
+        """Should correctly concatenate the built sections."""
+        # Mock
+        def _cron_mock(cronjob, _1, _2, _3):
+            return ["---", f'cronjob: {cronjob["name"]}']
+
+        def _process_mock(process, _1, _2, _3):
+            return ["---", f'hpa: {process["name"]}', "---", f'process: {process["name"]}']
+
+        get_sections_for_cronjobs_mock.side_effect = _cron_mock
+        get_sections_for_process_mock.side_effect = _process_mock
+
+        # Setup
+        deployment_config = {
+            "processes": [
+                {"name": "process-1", "is_cronjob": False},
+                {"name": "process-2", "is_cronjob": False},
+                {"name": "cronjob-1", "is_cronjob": True},
+                {"name": "cronjob-2", "is_cronjob": True},
+            ]
+        }
+
+        # Test
+        yaml_output = k8s_builders.build_yaml(deployment_config, "/path/to/templates", "tag")
+
+        # Assertions
+        self.assertEqual(
+            yaml_output,
+            """---
+hpa: process-1
+---
+process: process-1
+---
+hpa: process-2
+---
+process: process-2
+---
+cronjob: cronjob-1
+---
+cronjob: cronjob-2""",
+        )
+
+    def _create_template_validator(self, expected: dict, return_value: dict):
+        """A test helper validating the arguments passed to a template."""
+
+        def template_validator(parameters):
+            self.assertEqual(parameters, expected)
+            return return_value
+
+        return template_validator
+
+    @patch("nestor_api.lib.k8s.builders.set_namespace", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_environment_variables", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_probes", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_command", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_resources", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_node_selector", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_anti_affinity", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_replicas", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_secret", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.yaml_lib.parse_yaml", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.time.time", autospec=True)
+    def test_get_sections_for_process(
+        self,
+        time_mock,
+        parse_yaml_mock,
+        set_secret_mock,
+        set_replicas_mock,
+        set_anti_affinity_mock,
+        set_node_selector_mock,
+        set_resources_mock,
+        set_command_mock,
+        set_probes_mock,
+        set_environment_variables_mock,
+        set_namespace_mock,
+    ):
+        """Should correctly build the sections for the given process."""
+        # Mocks
+        time_mock.return_value = 123456
+        parse_yaml_mock.side_effect = lambda x: x
+        set_replicas_mock.return_value = None
+        set_namespace_mock.return_value = None
+
+        # Setup
+        process = {"name": "my-process"}
+        deployment_config = {
+            "app": "my-app",
+            "project": "my-project",
+            "docker": {"registry": {"organization": "my-organization"}},
+        }
+        tag_to_deploy = "1.0.0-sha-1ab23cd"
+        templates = {
+            "deployment": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----my-process",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "my-process",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"template": {"metadata": {}, "spec": {"containers": [{}]}}}},
+            )
+        }
+
+        # Test
+        sections = k8s_builders.get_sections_for_process(
+            process, deployment_config, tag_to_deploy, templates
+        )
+
+        # Assertions
+        self.assertEqual(sections, ["---", k8s_fixtures.PROCESS_SPEC_EXPECTED_OUTPUT])
+
+        set_secret_mock.assert_called_once()
+        set_replicas_mock.assert_called_once()
+        set_anti_affinity_mock.assert_called_once()
+        set_node_selector_mock.assert_called_once()
+        set_resources_mock.assert_called_once()
+        set_command_mock.assert_called_once()
+        set_probes_mock.assert_called_once()
+        set_environment_variables_mock.assert_called_once()
+        set_namespace_mock.assert_called_once()
+
+    @patch("nestor_api.lib.k8s.builders.set_namespace", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_environment_variables", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_probes", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_command", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_resources", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_node_selector", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_anti_affinity", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_replicas", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_secret", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.yaml_lib.parse_yaml", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.time.time", autospec=True)
+    def test_get_sections_for_process_with_hpa_and_namespace(
+        self,
+        time_mock,
+        parse_yaml_mock,
+        set_secret_mock,
+        set_replicas_mock,
+        set_anti_affinity_mock,
+        set_node_selector_mock,
+        set_resources_mock,
+        set_command_mock,
+        set_probes_mock,
+        set_environment_variables_mock,
+        set_namespace_mock,
+    ):
+        """Should build the sections with the configured hpa and namespace."""
+        # Mocks
+        time_mock.return_value = 123456
+        parse_yaml_mock.side_effect = lambda x: x
+        set_replicas_mock.return_value = {"template": "hpa"}
+        set_namespace_mock.return_value = {"template": "namespace"}
+
+        # Setup
+        process = {"name": "my-process"}
+        deployment_config = {
+            "app": "my-app",
+            "project": "my-project",
+            "docker": {"registry": {"organization": "my-organization"}},
+        }
+        tag_to_deploy = "1.0.0-sha-1ab23cd"
+        templates = {
+            "deployment": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----my-process",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "my-process",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"template": {"metadata": {}, "spec": {"containers": [{}]}}}},
+            )
+        }
+
+        # Test
+        sections = k8s_builders.get_sections_for_process(
+            process, deployment_config, tag_to_deploy, templates
+        )
+
+        # Assertions
+        self.assertEqual(
+            sections,
+            [
+                "---",
+                "template: namespace\n",
+                "---",
+                "template: hpa\n",
+                "---",
+                k8s_fixtures.PROCESS_SPEC_EXPECTED_OUTPUT,
+            ],
+        )
+
+        set_secret_mock.assert_called_once()
+        set_replicas_mock.assert_called_once()
+        set_anti_affinity_mock.assert_called_once()
+        set_node_selector_mock.assert_called_once()
+        set_resources_mock.assert_called_once()
+        set_command_mock.assert_called_once()
+        set_probes_mock.assert_called_once()
+        set_environment_variables_mock.assert_called_once()
+        set_namespace_mock.assert_called_once()
+
+    @patch("nestor_api.lib.k8s.builders.set_namespace", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_environment_variables", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_probes", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_command", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_resources", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_node_selector", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_anti_affinity", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_replicas", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_secret", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.yaml_lib.parse_yaml", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.time.time", autospec=True)
+    def test_get_sections_for_process_with_web_process(
+        self,
+        time_mock,
+        parse_yaml_mock,
+        set_secret_mock,
+        set_replicas_mock,
+        set_anti_affinity_mock,
+        set_node_selector_mock,
+        set_resources_mock,
+        set_command_mock,
+        set_probes_mock,
+        set_environment_variables_mock,
+        set_namespace_mock,
+    ):
+        """Should correctly build the sections for the web process."""
+        # Mocks
+        time_mock.return_value = 123456
+        parse_yaml_mock.side_effect = lambda x: x
+        set_replicas_mock.return_value = None
+        set_namespace_mock.return_value = None
+
+        # Setup
+        process = {"name": "web"}
+        deployment_config = {
+            "app": "my-app",
+            "project": "my-project",
+            "docker": {"registry": {"organization": "my-organization"}},
+        }
+        tag_to_deploy = "1.0.0-sha-1ab23cd"
+        templates = {
+            "deployment": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----web",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "web",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"template": {"metadata": {}, "spec": {"containers": [{}]}}}},
+            ),
+            "service": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "target_port": 8080,
+                },
+                return_value={"template": "web"},
+            ),
+        }
+
+        # Test
+        sections = k8s_builders.get_sections_for_process(
+            process, deployment_config, tag_to_deploy, templates
+        )
+
+        # Assertions
+        self.assertEqual(
+            sections, ["---", "template: web\n", "---", k8s_fixtures.PROCESS_SPEC_EXPECTED_OUTPUT],
+        )
+
+        set_secret_mock.assert_called_once()
+        set_replicas_mock.assert_called_once()
+        set_anti_affinity_mock.assert_called_once()
+        set_node_selector_mock.assert_called_once()
+        set_resources_mock.assert_called_once()
+        set_command_mock.assert_called_once()
+        set_probes_mock.assert_called_once()
+        set_environment_variables_mock.assert_called_once()
+        set_namespace_mock.assert_called_once()
+
+    @patch("nestor_api.lib.k8s.builders.set_namespace", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_node_selector", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_environment_variables", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_command", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_resources", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_secret", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.yaml_lib.parse_yaml", autospec=True)
+    def test_get_sections_for_cronjob(
+        self,
+        parse_yaml_mock,
+        set_secret_mock,
+        set_resources_mock,
+        set_command_mock,
+        set_environment_variables_mock,
+        set_node_selector_mock,
+        set_namespace_mock,
+    ):
+        """Should correctly build the sections for cronjob."""
+        # Mocks
+        parse_yaml_mock.side_effect = lambda x: x
+        set_namespace_mock.return_value = None
+
+        # Setup
+        cronjob = {"name": "my-cron"}
+        deployment_config = {
+            "app": "my-app",
+            "project": "my-project",
+            "docker": {"registry": {"organization": "my-organization"}},
+            "crons": {"my-cron": {"schedule": "*/30 * * * *", "concurrency_policy": "Forbid"}},
+        }
+        tag_to_deploy = "1.0.0-sha-1ab23cd"
+        templates = {
+            "cronjob": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----my-cron",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "my-cron",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"jobTemplate": {}}},
+            ),
+            "job": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----my-cron",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "my-cron",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"job": "spec"}},
+            ),
+        }
+
+        # Test
+        sections = k8s_builders.get_sections_for_cronjob(
+            cronjob, deployment_config, tag_to_deploy, templates
+        )
+
+        # Assertions
+        self.assertEqual(
+            sections, ["---", k8s_fixtures.CRONJOB_SPEC_EXPECTED_OUTPUT],
+        )
+
+        set_secret_mock.assert_called_once()
+        set_resources_mock.assert_called_once()
+        set_command_mock.assert_called_once()
+        set_environment_variables_mock.assert_called_once()
+        set_node_selector_mock.assert_called_once()
+        set_namespace_mock.assert_called_once()
+
+    @patch("nestor_api.lib.k8s.builders.set_namespace", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_node_selector", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_environment_variables", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_command", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_resources", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.set_secret", autospec=True)
+    @patch("nestor_api.lib.k8s.builders.yaml_lib.parse_yaml", autospec=True)
+    def test_get_sections_for_cronjob_with_namespace(
+        self,
+        parse_yaml_mock,
+        set_secret_mock,
+        set_resources_mock,
+        set_command_mock,
+        set_environment_variables_mock,
+        set_node_selector_mock,
+        set_namespace_mock,
+    ):
+        """Should build the sections with the configured namespace."""
+        # Mocks
+        parse_yaml_mock.side_effect = lambda x: x
+        set_namespace_mock.return_value = {"template": "namespace"}
+
+        # Setup
+        cronjob = {"name": "my-cron"}
+        deployment_config = {
+            "app": "my-app",
+            "project": "my-project",
+            "docker": {"registry": {"organization": "my-organization"}},
+            "crons": {"my-cron": {"schedule": "*/30 * * * *", "concurrency_policy": "Forbid"}},
+        }
+        tag_to_deploy = "1.0.0-sha-1ab23cd"
+        templates = {
+            "cronjob": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----my-cron",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "my-cron",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"jobTemplate": {}}},
+            ),
+            "job": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "name": "my-app----my-cron",
+                    "image": "my-organization/my-app:1.0.0-sha-1ab23cd",
+                    "process": "my-cron",
+                    "project": "my-project",
+                },
+                return_value={"spec": {"job": "spec"}},
+            ),
+        }
+
+        # Test
+        sections = k8s_builders.get_sections_for_cronjob(
+            cronjob, deployment_config, tag_to_deploy, templates
+        )
+
+        # Assertions
+        self.assertEqual(
+            sections,
+            ["---", "template: namespace\n", "---", k8s_fixtures.CRONJOB_SPEC_EXPECTED_OUTPUT],
+        )
+
+        set_secret_mock.assert_called_once()
+        set_resources_mock.assert_called_once()
+        set_command_mock.assert_called_once()
+        set_environment_variables_mock.assert_called_once()
+        set_node_selector_mock.assert_called_once()
+        set_namespace_mock.assert_called_once()

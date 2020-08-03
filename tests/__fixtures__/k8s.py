@@ -71,3 +71,24 @@ probes = {
         "timeoutSeconds": 1,
     },
 }
+
+# get_sections_for_process
+PROCESS_SPEC_EXPECTED_OUTPUT = """spec:
+  template:
+    metadata:
+      annotations:
+        date: '123456000'
+    spec:
+      containers:
+      - ports:
+        - containerPort: 8080
+"""
+
+# get_sections_for_cronjob
+CRONJOB_SPEC_EXPECTED_OUTPUT = """spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      job: spec
+  schedule: '*/30 * * * *'
+"""
