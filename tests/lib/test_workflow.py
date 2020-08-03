@@ -3,7 +3,12 @@ from unittest.mock import MagicMock, call, create_autospec, patch
 
 from github import AuthenticatedUser, Branch
 
-from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider, GitProviderError
+from nestor_api.adapters.git.abstract_git_provider import (
+    AbstractGitProvider,
+    GitProviderError,
+    GitResource,
+    GitResourceNotFoundError,
+)
 import nestor_api.lib.workflow as workflow
 
 
@@ -123,11 +128,15 @@ class TestWorkflow(TestCase):
             workflow.get_previous_step({}, "step1")
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.io")
     @patch("nestor_api.lib.workflow.config", autospec=True)
     @patch("nestor_api.lib.workflow._create_and_protect_branch", autospec=True)
-    def test_init_workflow(self, _create_and_protect_branch_mock, config_mock, _logger_mock):
+    def test_init_workflow(
+        self, _create_and_protect_branch_mock, config_mock, io_mock, _logger_mock
+    ):
         """Should correctly initialize all branches."""
         # Mocks
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
         config_mock.get_app_config.return_value = {
             "workflow": ["integration", "staging", "production"]
         }
@@ -149,6 +158,7 @@ class TestWorkflow(TestCase):
 
         # Assertions
         git_provider_mock.get_branch.assert_called_with("organization", "app-1", "master")
+        io_mock.remove.assert_called_with("fake-path")
         self.assertEqual(
             result,
             (
@@ -162,13 +172,15 @@ class TestWorkflow(TestCase):
         )
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.io")
     @patch("nestor_api.lib.workflow.config", autospec=True)
     @patch("nestor_api.lib.workflow._create_and_protect_branch", autospec=True)
-    def test_init_workflow_without_master_branch_commit(
-        self, _create_and_protect_branch_mock, config_mock, _logger_mock
+    def test_init_workflow_without_master_branch(
+        self, _create_and_protect_branch_mock, config_mock, io_mock, _logger_mock
     ):
-        """Should fail if master does not have any commit."""
+        """Should return fail status and empty report."""
         # Mocks
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
         config_mock.get_app_config.return_value = {
             "workflow": ["integration", "staging", "production"]
         }
@@ -176,26 +188,29 @@ class TestWorkflow(TestCase):
         user = MagicMock(spec=AuthenticatedUser.AuthenticatedUser)
         user.login = "some-user-login"
         git_provider_mock.get_user_info.return_value = user
-        master_branch = MagicMock(spec=Branch.Branch)
-        master_branch.commit = None
-        git_provider_mock.get_branch.return_value = master_branch
+        git_provider_mock.get_branch.side_effect = GitResourceNotFoundError(GitResource.BRANCH)
 
         # Test
-        with self.assertRaisesRegex(Exception, "Repository looks empty"):
-            workflow.init_workflow("organization", "app-1", git_provider_mock)
+        result = workflow.init_workflow("organization", "app-1", git_provider_mock)
 
         # Assertions
         _create_and_protect_branch_mock.assert_not_called()
+        io_mock.remove.assert_called_with("fake-path")
+        self.assertEqual(
+            result, (workflow.WorkflowInitStatus.FAIL, {},),
+        )
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.io")
     @patch("nestor_api.lib.workflow.config", autospec=True)
     @patch("nestor_api.lib.workflow._create_and_protect_branch", autospec=True)
     def test_init_workflow_failing_to_create_or_protect_branch(
-        self, _create_and_protect_branch_mock, config_mock, _logger_mock
+        self, _create_and_protect_branch_mock, config_mock, io_mock, _logger_mock
     ):
         """Should return failed report if something goes wrong when
         creating/protecting branches."""
         # Mocks
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
         config_mock.get_app_config.return_value = {
             "workflow": ["integration", "staging", "production"]
         }
@@ -213,15 +228,18 @@ class TestWorkflow(TestCase):
 
         # Assertions
         git_provider_mock.get_branch.assert_called_with("organization", "app-1", "master")
+        io_mock.remove.assert_called_with("fake-path")
         self.assertEqual(
             result, (workflow.WorkflowInitStatus.FAIL, {},),
         )
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.io")
     @patch("nestor_api.lib.workflow.config", autospec=True)
-    def test_init_workflow_without_configured_workflow(self, config_mock, _logger_mock):
-        """Should create no branches."""
+    def test_init_workflow_without_configured_workflow(self, config_mock, io_mock, _logger_mock):
+        """Should create no branch."""
         # Mocks
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
         config_mock.get_app_config.return_value = {}
         git_provider_mock = create_autospec(spec=AbstractGitProvider)
 
@@ -233,14 +251,36 @@ class TestWorkflow(TestCase):
         git_provider_mock.get_branch.assert_not_called()
         git_provider_mock.create_branch.assert_not_called()
         git_provider_mock.protect_branch.assert_not_called()
+        io_mock.remove.assert_called_with("fake-path")
         self.assertEqual(result, (workflow.WorkflowInitStatus.SUCCESS, {}))
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
-    def test_create_and_protect_branch_with_unexisting_branch(self, _logger_mock):
+    @patch("nestor_api.lib.workflow.io")
+    @patch("nestor_api.lib.workflow.config", autospec=True)
+    def test_init_workflow_with_cleaning_failing(self, config_mock, io_mock, _logger_mock):
+        """Should not impact report result."""
+        # Mocks
+        config_mock.create_temporary_config_copy.return_value = "fake-path"
+        config_mock.get_app_config.return_value = {}
+        io_mock.remove.side_effect = Exception("some error when cleaning")
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+
+        # Test
+        result = None
+        try:
+            result = workflow.init_workflow("organization", "app-1", git_provider_mock)
+        except Exception:  # pylint: disable=broad-except
+            self.fail("init_workflow() should not raise because of cleaning.")
+
+        # Assertions
+        self.assertEqual(result, (workflow.WorkflowInitStatus.SUCCESS, {}))
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    def test_create_and_protect_branch_with_non_existing_branch(self, _logger_mock):
         """Should create and protect branch."""
         # Mocks
         git_provider_mock = create_autospec(spec=AbstractGitProvider)
-        git_provider_mock.get_branch.return_value = None
+        git_provider_mock.get_branch.side_effect = GitResourceNotFoundError(GitResource.BRANCH)
         branch = MagicMock(spec=Branch.Branch)
         branch.protected = False
         git_provider_mock.create_branch.return_value = branch
@@ -259,6 +299,22 @@ class TestWorkflow(TestCase):
             "organization", "app-1", "staging", "some-user-login"
         )
         self.assertEqual(result, {"created": (True, True), "protected": (True, True)})
+
+    @patch("nestor_api.lib.workflow.Logger", autospec=True)
+    def test_create_and_protect_branch_with_non_existing_repo(self, _logger_mock):
+        """Should raise an error."""
+        # Mocks
+        git_provider_mock = create_autospec(spec=AbstractGitProvider)
+        git_provider_mock.get_branch.side_effect = GitResourceNotFoundError(GitResource.REPOSITORY)
+
+        # Test
+        with self.assertRaises(GitResourceNotFoundError) as context:
+            workflow._create_and_protect_branch(
+                "organization", "app-1", "staging", "5ac5ee8", "some-user-login", git_provider_mock
+            )
+
+        # Assertions
+        self.assertEqual(context.exception.resource, GitResource.REPOSITORY)
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
     def test_create_and_protect_branch_with_existing_protected_branch(self, _logger_mock):
@@ -281,7 +337,7 @@ class TestWorkflow(TestCase):
         self.assertEqual(result, {"created": (False, True), "protected": (False, True)})
 
     @patch("nestor_api.lib.workflow.Logger", autospec=True)
-    def test_create_workflow_with_existing_unprotected_branch(self, _logger_mock):
+    def test_create_and_protect_branch_with_existing_unprotected_branch(self, _logger_mock):
         """Should only protect the branch."""
         # Mocks
         git_provider_mock = create_autospec(spec=AbstractGitProvider)
@@ -301,3 +357,22 @@ class TestWorkflow(TestCase):
             "organization", "app-1", "staging", "some-user-login"
         )
         self.assertEqual(result, {"created": (False, True), "protected": (True, True)})
+
+    def test_get_workflow_branches(self):
+        """Should return the list of workflow branches."""
+        fake_config = {"workflow": ["integration", "staging", "master"]}
+        result = workflow._get_workflow_branches(fake_config, "master")
+
+        self.assertEqual(result, ["integration", "staging"])
+
+    def test_get_workflow_branches_with_empty_config(self):
+        """Should return an empty list."""
+        result = workflow._get_workflow_branches({}, "master")
+
+        self.assertEqual(result, [])
+
+    def test_get_workflow_branches_with_empty_workflow(self):
+        """Should return an empty list."""
+        result = workflow._get_workflow_branches({"workflow": []}, "master")
+
+        self.assertEqual(result, [])
