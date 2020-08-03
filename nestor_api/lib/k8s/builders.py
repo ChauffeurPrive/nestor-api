@@ -64,6 +64,7 @@ def load_templates(templates_path: str, template_names: list) -> dict:
     }
 
 
+# pylint: disable=too-many-locals
 def get_sections_for_process(
     process: dict, deployment_config: dict, tag_to_deploy: str, templates: dict
 ) -> list:
@@ -74,7 +75,9 @@ def get_sections_for_process(
     )
     image_name = get_image_name(deployment_config, {"tag": tag_to_deploy})
 
-    deployment_sections = []
+    service_port = K8sConfiguration.get_service_port()
+
+    deployment_resources = []
 
     if process_name == "web":
         web_service = yaml_lib.parse_yaml(
@@ -83,12 +86,12 @@ def get_sections_for_process(
                     "app": app_name,
                     "name": app_name,
                     "image": image_name,
-                    "target_port": K8sConfiguration.get_service_port(),
+                    "target_port": service_port,
                     **deployment_config.get("templateVars", {}),
                 }
             )
         )
-        deployment_sections.append(web_service)
+        deployment_resources.append(web_service)
 
     deployment = yaml_lib.parse_yaml(
         templates["deployment"](
@@ -109,8 +112,8 @@ def get_sections_for_process(
     set_secret(deployment_config, deployment)
 
     hpa = set_replicas(deployment_config, process_name, deployment, templates)
-    if hpa:
-        deployment_sections.append(hpa)
+    if hpa is not None:
+        deployment_resources.append(hpa)
 
     set_anti_affinity(deployment_config, process_name, deployment, templates)
 
@@ -120,22 +123,22 @@ def get_sections_for_process(
 
     set_command(process, deployment)
 
-    set_probes(deployment_config, process_name, deployment)
+    set_probes(deployment_config, process_name, deployment, service_port)
 
     deployment["spec"]["template"]["spec"]["containers"][0]["ports"] = [
-        {"containerPort": K8sConfiguration.get_service_port()}
+        {"containerPort": service_port}
     ]
 
-    set_environment_variables(deployment_config, deployment)
+    set_environment_variables(deployment_config, deployment, service_port)
 
-    deployment_sections.append(deployment)
+    deployment_resources.append(deployment)
 
-    namespace = set_namespace(deployment_config, deployment_sections, templates)
-    if namespace:
-        deployment_sections.insert(0, namespace)
+    namespace = set_namespace(deployment_config, deployment_resources, templates)
+    if namespace is not None:
+        deployment_resources.insert(0, namespace)
 
     return list_utils.flatten(
-        [["---", yaml_lib.convert_to_yaml(section)] for section in deployment_sections]
+        [["---", yaml_lib.convert_to_yaml(section)] for section in deployment_resources]
     )
 
 
@@ -148,6 +151,8 @@ def get_sections_for_cronjob(
         deployment_config, process_name
     )
     image_name = get_image_name(deployment_config, {"tag": tag_to_deploy})
+
+    service_port = K8sConfiguration.get_service_port()
 
     cronjob_sections = []
 
@@ -186,14 +191,14 @@ def get_sections_for_cronjob(
 
     set_command(process, job)
 
-    set_environment_variables(deployment_config, job)
+    set_environment_variables(deployment_config, job, service_port)
     set_node_selector(deployment_config, process_name, job)
 
     cronjob["spec"]["jobTemplate"]["spec"] = job["spec"]
     cronjob_sections.append(cronjob)
 
     namespace = set_namespace(deployment_config, cronjob_sections, templates)
-    if namespace:
+    if namespace is not None:
         cronjob_sections.insert(0, namespace)
 
     return list_utils.flatten(
@@ -357,11 +362,11 @@ def set_command(process: dict, resource: dict) -> None:
     ]
 
 
-def set_environment_variables(deployment_config: dict, resource: dict) -> None:
+def set_environment_variables(deployment_config: dict, resource: dict, port: int) -> None:
     """Format and attach the environment variables to the resource."""
     secret_variables = get_secret_variables(deployment_config)
     variables = get_variables(deployment_config)
-    variables["PORT"] = str(K8sConfiguration.get_service_port())
+    variables["PORT"] = str(port)
 
     environment_variables = [{"name": key, "value": value} for key, value in variables.items()]
     environment_variables += [
@@ -393,11 +398,11 @@ def set_node_selector(deployment_config: dict, process_name: str, resource: dict
         resource["spec"]["template"]["spec"]["nodeSelector"] = node_selector
 
 
-def set_probes(deployment_config: dict, process_name: str, resource: dict) -> None:
+def set_probes(deployment_config: dict, process_name: str, resource: dict, port: int) -> None:
     """Attach the process' probes to the resource if configured."""
     if process_name in deployment_config["probes"]:
         probes_config = deployment_config["probes"][process_name]
-        probes = get_probes(probes_config, K8sConfiguration.get_service_port())
+        probes = get_probes(probes_config, port)
         if "livenessProbe" in probes:
             resource["spec"]["template"]["spec"]["containers"][0]["livenessProbe"] = probes[
                 "livenessProbe"

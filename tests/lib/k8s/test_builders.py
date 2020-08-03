@@ -451,10 +451,8 @@ class TestK8sBuilders(TestCase):
             resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}},]
         )
 
-    @patch("nestor_api.lib.k8s.builders.K8sConfiguration", autospec=True)
-    def test_set_environment_variables(self, config_mock):
+    def test_set_environment_variables(self):
         """Should correctly attach the environment variables."""
-        config_mock.get_service_port.return_value = 4242
         deployment_config = {
             "variables": {
                 "app": {"APP_VAR_1": "app_var_1", "APP_VAR_2": "app_var_2",},
@@ -471,7 +469,7 @@ class TestK8sBuilders(TestCase):
         }
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_environment_variables(deployment_config, resource)
+        k8s_builders.set_environment_variables(deployment_config, resource, 4242)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0]["env"],
@@ -550,7 +548,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {"my-process": {}}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0],
@@ -579,7 +577,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {"my-process": {}}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0],
@@ -602,7 +600,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {"my-process": {}}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0],
@@ -622,7 +620,7 @@ class TestK8sBuilders(TestCase):
         deployment_config = {"probes": {}}
         resource = {"spec": {"template": {"spec": {"containers": [{}]}}}}
 
-        k8s_builders.set_probes(deployment_config, "my-process", resource)
+        k8s_builders.set_probes(deployment_config, "my-process", resource, 8080)
 
         self.assertEqual(
             resource["spec"]["template"]["spec"]["containers"][0], {},
