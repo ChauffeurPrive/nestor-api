@@ -32,7 +32,7 @@ TODO: Detail routes used to make the workflow advance
 
 ### Initialization
 
-When initializing a repository with the workflow configured as :
+When initializing a repository with the following workflow:
 
 ```yaml
 workflow:
@@ -41,10 +41,11 @@ workflow:
   - production
 ```
 
-The 3 branches (master, staging, production) will be created.
-You will be able to merge in the first step/branch defined (master here).
+These 3 branches (master, staging, production) will be created.
+You will be able to merge in the first branch defined (master here).
 The other branches will be protected so that you cannot merge in (except with higher permissions).
-This requires to have a dedicated account with sufficient permissions (see [Prerequisites](./getting_started.md#github-account-prerequisite)).
+
+_This requires to have a dedicated account with sufficient permissions (see [Prerequisites](./getting_started.md#github-account-prerequisite))._
 
 ### Progress
 
