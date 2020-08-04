@@ -10,11 +10,11 @@ help:
 
 format:
 	isort -rc --apply nestor_api tests validator yaml_lib ./**.py
-	black --line-length 100 nestor_api tests validator yaml_lib ./**.py
+	black nestor_api tests validator yaml_lib
 
 lint:
 	isort -rc -c nestor_api tests validator yaml_lib ./**.py
-	black --check --line-length 100 nestor_api tests validator yaml_lib ./**.py
+	black --check nestor_api tests validator yaml_lib
 	pylint tests --rcfile=tests/.pylintrc
 	pylint nestor_api ./**.py --rcfile=nestor_api/.pylintrc
 	pylint validator ./**.py --rcfile=nestor_api/.pylintrc
