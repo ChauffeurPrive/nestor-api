@@ -43,7 +43,7 @@ workflow:
 
 These 3 branches (master, staging, production) will be created.
 You will be able to merge in the first branch defined (master here).
-The other branches will be protected so that you cannot merge in (except with higher permissions).
+The other branches will be protected so that a merge commit can only be triggered by a workflow.
 
 _This requires to have a dedicated account with sufficient permissions (see [Prerequisites](./getting_started.md#github-account-prerequisite))._
 
