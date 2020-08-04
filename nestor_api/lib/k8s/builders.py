@@ -4,7 +4,7 @@ import os
 import time
 from typing import Optional, Tuple
 
-from pybars import Compiler  # type: ignore
+import pybars  # type: ignore
 
 from nestor_api.config.k8s import K8sConfiguration
 from nestor_api.config.probes import ProbesDefaultConfiguration
@@ -17,10 +17,8 @@ import nestor_api.utils.list as list_utils
 import yaml_lib
 
 
-def build_yaml(deployment_config: dict, templates_path: str, tag_to_deploy: str) -> str:
+def build_deployment_yaml(deployment_config: dict, templates: dict, tag_to_deploy: str) -> str:
     """Builds the deployment.yaml corresponding to the provided k8s deployment configuration."""
-    templates = load_templates(templates_path, TEMPLATES)
-
     yaml_sections = []
 
     processes = config.get_processes(deployment_config)
@@ -36,6 +34,30 @@ def build_yaml(deployment_config: dict, templates_path: str, tag_to_deploy: str)
     return "\n".join(yaml_sections)
 
 
+def build_ingress_yaml(deployment_config: dict, templates: dict) -> str:
+    """Builds the k8s yaml corresponding to the provided configuration."""
+    app_name, sanitized_process_name, metadata_name = get_sanitized_names(deployment_config, "web")
+
+    ingress_yaml = templates["ingress-app"](
+        {
+            "app": app_name,
+            "process": sanitized_process_name,
+            "name": metadata_name,
+            "namespace": deployment_config.get("namespace", "default"),
+            "domain": deployment_config["domain"],
+            "domain_prefix": deployment_config["domain_prefix"],
+            **deployment_config.get("templateVars", {}),
+        }
+    )
+
+    deployment_resources = [
+        "---",
+        ingress_yaml,
+    ]
+
+    return "\n".join(deployment_resources)
+
+
 TEMPLATES = [
     "deployment",
     "hpa",
@@ -45,22 +67,23 @@ TEMPLATES = [
     "namespace",
     "cronjob",
     "job",
+    "ingress-app",
 ]
 
 
-def _load_template(templates_path: str, template_compiler: Compiler, template_name: str):
+def _load_template(templates_path: str, template_compiler: pybars.Compiler, template_name: str):
     """Load a single handlebar template."""
     template_path = os.path.join(templates_path, f"{template_name}.yaml")
     file_content = io.read(template_path)
     return template_compiler.compile(file_content)
 
 
-def load_templates(templates_path: str, template_names: list) -> dict:
-    """Load the templates from the configuration path."""
-    template_compiler = Compiler()
+def load_templates(templates_path: str) -> dict:
+    """Load the builder templates from the configuration path."""
+    template_compiler = pybars.Compiler()
     return {
-        template: _load_template(templates_path, template_compiler, template)
-        for template in template_names
+        template_name: _load_template(templates_path, template_compiler, template_name)
+        for template_name in TEMPLATES
     }
 
 
