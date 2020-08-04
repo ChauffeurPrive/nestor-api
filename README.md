@@ -2,6 +2,10 @@
 
 Nestor-api is an API used to manage deployment of applications Kubernetes. It can be used with [nestor-cli](https://github.com/ChauffeurPrive/nestor-cli), a CLI tool consuming nestor-api.
 
+## Getting started
+
+See [Getting started](./docs/getting_started.md).
+
 ## Installing
 
 Python 3.7 or above.

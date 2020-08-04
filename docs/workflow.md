@@ -30,6 +30,25 @@ TODO: Detail routes used to make the workflow advance
 
 ## Details
 
+### Initialization
+
+When initializing a repository with the following workflow:
+
+```yaml
+workflow:
+  - master
+  - staging
+  - production
+```
+
+These 3 branches (master, staging, production) will be created.
+You will be able to merge in the first branch defined (master here).
+The other branches will be protected so that a merge commit can only be triggered by a workflow.
+
+_This requires to have a dedicated account with sufficient permissions (see [Prerequisites](./getting_started.md#github-account-prerequisite))._
+
+### Progress
+
 Nestor workflow relies on commit hashes. When trying to make the workflow go forward, it compares the previous step's most recent commit hash with the one from the step we want to move forward to:
 
 - if they differ, this means that the previous step has new commits that need to be applied on the next step
