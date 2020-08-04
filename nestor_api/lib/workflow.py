@@ -85,10 +85,10 @@ def get_previous_step(project_config: dict, target: str) -> Optional[str]:
 def init_workflow(
     organization: str, app_name: str, git_provider: AbstractGitProvider
 ) -> Tuple[WorkflowInitStatus, Report]:
-    """Initialize workflow for a given repo by creating all workflow branches.
-    This function is idempotent which means it will not try to recreate a
-    branch that already exist. However if a branch already exist but is not protected,
-    it will be set to protected."""
+    """Initialize the workflow of an application's repository by creating
+    all workflow branches. This function is idempotent which means it will not
+    try to recreate a branch that already exists. However if a branch
+    already exists but is not protected, it will be set to protected."""
 
     # Create temporary copy for avoiding concurrency problems
     config_path = config.create_temporary_config_copy()
