@@ -1,7 +1,8 @@
 """Workflow library"""
 
+from collections import namedtuple
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TypedDict
 
 from nestor_api.adapters.git.abstract_git_provider import (
     AbstractGitProvider,
@@ -21,6 +22,20 @@ class WorkflowInitStatus(Enum):
 
     SUCCESS = "SUCCESS"
     FAIL = "FAIL"
+
+
+CreationStatus = namedtuple("CreationStatus", ["is_modified", "is_created"])
+ProtectionStatus = namedtuple("ProtectionStatus", ["is_modified", "is_protected"])
+
+
+class BranchReport(TypedDict, total=False):
+    """Branch report dictionary"""
+
+    created: CreationStatus
+    protected: ProtectionStatus
+
+
+Report = Dict[str, BranchReport]
 
 
 def get_apps_to_move_forward(next_step: str) -> dict:
@@ -65,9 +80,6 @@ def get_previous_step(project_config: dict, target: str) -> Optional[str]:
     if index > 0:
         return project_config["workflow"][index - 1]
     return None
-
-
-Report = Dict[str, Dict[str, Tuple[bool, bool]]]
 
 
 def init_workflow(
@@ -143,19 +155,19 @@ def _create_and_protect_branch(
     master_sha: str,
     user_login: str,
     git_provider: AbstractGitProvider,
-) -> Dict[str, Tuple[bool, bool]]:
+) -> BranchReport:
     """Try to create and protect a branch on a repository."""
-    report = {}
+    report: BranchReport = {}
     branch = None
     try:
         branch = git_provider.get_branch(organization, app_name, branch_name)
         Logger.info({"branch_name": branch_name}, "Branch already exists. Skipped creation.")
-        report["created"] = (False, True)
+        report["created"] = CreationStatus(False, True)
     except GitResourceNotFoundError as err:
         if err.resource == GitResource.BRANCH:
             branch = git_provider.create_branch(organization, app_name, branch_name, master_sha)
             Logger.info({"branch_name": branch_name}, "Branch created")
-            report["created"] = (True, True)
+            report["created"] = CreationStatus(True, True)
         else:
             raise
 
@@ -163,11 +175,11 @@ def _create_and_protect_branch(
         Logger.info(
             {"branch_name": branch_name}, "Branch is already protected. Skipped protection."
         )
-        report["protected"] = (False, True)
+        report["protected"] = ProtectionStatus(False, True)
     else:
         git_provider.protect_branch(organization, app_name, branch_name, user_login)
         Logger.info({"branch_name": branch_name}, "Branch protected")
-        report["protected"] = (True, True)
+        report["protected"] = ProtectionStatus(True, True)
     return report
 
 
