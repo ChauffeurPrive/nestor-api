@@ -22,7 +22,7 @@ pygithub = "==1.51"
 pybars3 = "0.9.7"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
 
 [pipenv]
 allow_prereleases = true

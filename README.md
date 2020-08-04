@@ -8,7 +8,7 @@ See [Getting started](./docs/getting_started.md).
 
 ## Installing
 
-Python 3.7 or above.
+Python 3.8 or above.
 
 Dependencies are managed by [Pipenv](https://github.com/pypa/pipenv).
 
