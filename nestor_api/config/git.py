@@ -14,4 +14,4 @@ class GitConfiguration:
     @staticmethod
     def get_master_tag():
         """Returns the master tag."""
-        return os.getenv("NESTOR_GIT_MASTER_TAG", "master")
+        return os.getenv("NESTOR_GIT_DEFAULT_TAG", "master")

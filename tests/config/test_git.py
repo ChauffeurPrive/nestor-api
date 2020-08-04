@@ -14,7 +14,7 @@ class TestGitConfig(TestCase):
     def test_get_git_provider_token_default(self):
         self.assertIsNone(GitConfiguration.get_git_provider_token())
 
-    @patch.dict(os.environ, {"NESTOR_GIT_MASTER_TAG": "production"})
+    @patch.dict(os.environ, {"NESTOR_GIT_DEFAULT_TAG": "production"})
     def test_get_master_tag_configured(self):
         self.assertEqual(GitConfiguration.get_master_tag(), "production")
 
