@@ -2,7 +2,8 @@
 
 from flask import Blueprint, request
 
-from nestor_api.api.api_routes.workflow.workflow import advance_workflow, init_workflow
+from nestor_api.api.api_routes.workflow.init import init_workflow
+from nestor_api.api.api_routes.workflow.advance import advance_workflow
 
 
 def register_routes(api: Blueprint) -> None:
@@ -14,7 +15,7 @@ def register_routes(api: Blueprint) -> None:
 
     @api.route("/progress/<current_step>", methods=["POST"])
     def _advance_workflow(current_step):
-        return advance_workflow(current_step, sync=False)
+        return advance_workflow(current_step, request.form["tags"], sync=False)
 
     @api.route("/progress_sync/<current_step>", methods=["POST"])
     def _advance_workflow(current_step):
