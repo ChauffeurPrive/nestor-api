@@ -34,9 +34,9 @@ def build_deployment_yaml(deployment_config: dict, templates: dict, tag_to_deplo
     return "\n".join(yaml_sections)
 
 
-def build_ingress_yaml(deployment_config: dict, templates: dict) -> str:
+def build_ingress_yaml(deployment_config: dict, process_name: str, templates: dict) -> str:
     """Builds the k8s yaml corresponding to the provided configuration."""
-    app_name, sanitized_process_name, metadata_name = get_sanitized_names(deployment_config, "web")
+    app_name, sanitized_process_name, metadata_name = get_sanitized_names(deployment_config, process_name)
 
     ingress_yaml = templates["ingress-app"](
         {

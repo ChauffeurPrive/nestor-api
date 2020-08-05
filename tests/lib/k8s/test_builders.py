@@ -1334,7 +1334,7 @@ cronjob: cronjob-2""",
         }
 
         # Test
-        result = k8s_builders.build_ingress_yaml(deployment_config, templates)
+        result = k8s_builders.build_ingress_yaml(deployment_config, "web", templates)
 
         # Assertions
         self.assertEqual(result, "---\ntemplate: ingress-app\n")
