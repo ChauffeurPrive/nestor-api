@@ -1,7 +1,7 @@
 """Register all routes under the /api prefixes. The route /heartbeat is not included."""
 from flask import Blueprint
 
-from .api_routes import builds
+from .api_routes import builds, workflow
 
 
 def create_api() -> Blueprint:
@@ -9,5 +9,6 @@ def create_api() -> Blueprint:
     api = Blueprint("api", __name__, url_prefix="/api")
 
     builds.register_routes(api=api)
+    workflow.register_routes(api=api)
 
     return api

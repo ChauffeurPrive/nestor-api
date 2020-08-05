@@ -37,3 +37,4 @@ pipenv sync # Add --dev to also install dev dependencies
 |                    `NESTOR_K8S_HTTP_PROXY` |                        |            | The kubernetes HTTP_PROXY                                   |
 |                  `NESTOR_K8S_SERVICE_PORT` | `8080`                 |            | The port on which the k8s services will be exposed          |
 |               `NESTOR_K8S_TEMPLATE_FOLDER` | `templates`            |            | The subfolder in which the k8s templates are stored         |
+|                   `NESTOR_GIT_DEFAULT_TAG` | `master`               |            | The tag used to define the master branch                    |
