@@ -1,4 +1,4 @@
-"""Kubernetes' kubectl library"""
+"""Kubernetes' kubectl library."""
 
 import json
 import os
@@ -19,7 +19,7 @@ def _build_kubectl_env() -> dict:
 def fetch_resource_configuration(
     cluster_name: str, namespace: str, app_name: str, resource_type: K8sResourceType
 ) -> dict:
-    """Fetch a resource's configuration using kubectl"""
+    """Fetch a resource's configuration using kubectl."""
     command = (
         "kubectl "
         f"--context {cluster_name} "
@@ -33,3 +33,11 @@ def fetch_resource_configuration(
     stdout = io.execute(command, env=env)
 
     return json.loads(stdout)
+
+
+def apply_config(cluster_name: str, yaml_path: str) -> None:
+    """Apply the k8s configuration using kubectl."""
+    command = "kubectl " f"--context {cluster_name} " f"apply -f {yaml_path}"
+    env = _build_kubectl_env()
+
+    io.execute(command, env=env)

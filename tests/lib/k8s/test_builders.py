@@ -1,73 +1,61 @@
 from unittest import TestCase
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 import nestor_api.lib.k8s.builders as k8s_builders
 import tests.__fixtures__.k8s as k8s_fixtures
 
 
 class TestK8sBuilders(TestCase):
-    def compiled_templates_mock(self):
-        """To mock compiled templates (with handlebars)"""
+    def _create_template_validator(self, expected: dict, return_value):
+        """A test helper validating the arguments passed to a template."""
 
-        def check_anti_affinity_node_template(parameters):
-            self.assertEqual(parameters, {"app": "app", "process": "web"})
-            return "mock: template_anti_affinity_node"
+        def template_validator(parameters):
+            self.assertEqual(parameters, expected)
+            return return_value
 
-        def check_anti_affinity_zone_template(parameters):
-            self.assertEqual(parameters, {"app": "app", "process": "web"})
-            return "mock: template_anti_affinity_zone"
+        return template_validator
 
-        def check_hpa(parameters):
-            self.assertEqual(
-                parameters,
-                {
-                    "app": "app",
-                    "process": "web",
-                    "name": "app----web",
-                    "minReplicas": 5,
-                    "maxReplicas": 15,
-                    "targetCPUUtilizationPercentage": 90,
-                },
-            )
-            return "mock: template_hpa"
-
-        def check_namespace(parameters):
-            self.assertEqual(parameters, {"name": "namespace"})
-            return "mock: template_namespace"
-
-        return {
-            "anti-affinity-node": check_anti_affinity_node_template,
-            "anti-affinity-zone": check_anti_affinity_zone_template,
-            "hpa": check_hpa,
-            "namespace": check_namespace,
-        }
-
+    # pylint: disable=line-too-long
     @patch("nestor_api.lib.k8s.builders.io", autospec=True)
     def test_load_templates(self, io_mock):
         """Should load the templates and correctly substitute `{{variable}}`."""
-
         io_mock.read.side_effect = (
             lambda file_name: f"file: {file_name}\n" + "template: {{variable}}\n"
         )
 
-        templates = k8s_builders.load_templates("/path", ["template_a", "template_b"])
-        result_a = templates["template_a"]({"variable": "value_a"})
-        result_b = templates["template_b"]({"variable": "value_b"})
+        templates = k8s_builders.load_templates("/path")
 
-        io_mock.read.assert_has_calls(
-            [call("/path/template_a.yaml"), call("/path/template_b.yaml")]
+        # Invoke every templates function before doing the assertions
+        resolved_templates = {
+            name: resolver({"variable": name}) for name, resolver in templates.items()
+        }
+        self.assertEqual(
+            resolved_templates,
+            {
+                "deployment": "file: /path/deployment.yaml\ntemplate: deployment\n",
+                "hpa": "file: /path/hpa.yaml\ntemplate: hpa\n",
+                "anti-affinity-node": "file: /path/anti-affinity-node.yaml\ntemplate: anti-affinity-node\n",
+                "anti-affinity-zone": "file: /path/anti-affinity-zone.yaml\ntemplate: anti-affinity-zone\n",
+                "service": "file: /path/service.yaml\ntemplate: service\n",
+                "namespace": "file: /path/namespace.yaml\ntemplate: namespace\n",
+                "cronjob": "file: /path/cronjob.yaml\ntemplate: cronjob\n",
+                "job": "file: /path/job.yaml\ntemplate: job\n",
+                "ingress-app": "file: /path/ingress-app.yaml\ntemplate: ingress-app\n",
+            },
         )
-        self.assertEqual(result_a, "file: /path/template_a.yaml\ntemplate: value_a\n")
-        self.assertEqual(result_b, "file: /path/template_b.yaml\ntemplate: value_b\n")
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_not_enabled_default(self, parse_yaml_mock):
         """Returns None if not enabled by default"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_node
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {"default": {"is_anti_affinity_node_enabled": False}},
+        }
+        templates = {}
+
         anti_affinity_node = k8s_builders.get_anti_affinity_node(
-            {"app": "app", "affinity": {"default": {"is_anti_affinity_node_enabled": False}}},
-            "web",
-            self.compiled_templates_mock(),
+            deployment_config, "web", templates
         )
 
         self.assertEqual(anti_affinity_node, None)
@@ -75,56 +63,79 @@ class TestK8sBuilders(TestCase):
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_not_enabled_for_process(self, parse_yaml_mock):
         """Returns None if not enabled for the process"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_node
-        anti_affinity_node = k8s_builders.get_anti_affinity_node(
-            {
-                "app": "app",
-                "affinity": {
-                    "default": {"is_anti_affinity_node_enabled": False},
-                    "web": {"is_anti_affinity_node_enabled": False},
-                },
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {
+                "default": {"is_anti_affinity_node_enabled": False},
+                "web": {"is_anti_affinity_node_enabled": False},
             },
-            "web",
-            self.compiled_templates_mock(),
+        }
+        templates = {}
+
+        anti_affinity_node = k8s_builders.get_anti_affinity_node(
+            deployment_config, "web", templates
         )
+
         self.assertEqual(anti_affinity_node, None)
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_enabled_default(self, parse_yaml_mock):
         """Returns the anti affinity node if enabled by default"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_node
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {"default": {"is_anti_affinity_node_enabled": True}},
+        }
+        templates = {
+            "anti-affinity-node": self._create_template_validator(
+                expected={"app": "app", "process": "web"},
+                return_value=k8s_fixtures.anti_affinity_node,
+            ),
+        }
+
         anti_affinity_node = k8s_builders.get_anti_affinity_node(
-            {"app": "app", "affinity": {"default": {"is_anti_affinity_node_enabled": True}}},
-            "web",
-            self.compiled_templates_mock(),
+            deployment_config, "web", templates
         )
+
         self.assertEqual(anti_affinity_node, k8s_fixtures.anti_affinity_node)
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_node_enabled_for_process(self, parse_yaml_mock):
         """Returns the anti affinity node if enabled for the process"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_node
-        anti_affinity_node = k8s_builders.get_anti_affinity_node(
-            {
-                "app": "app",
-                "affinity": {
-                    "default": {"is_anti_affinity_node_enabled": False},
-                    "web": {"is_anti_affinity_node_enabled": True},
-                },
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {
+                "default": {"is_anti_affinity_node_enabled": False},
+                "web": {"is_anti_affinity_node_enabled": True},
             },
-            "web",
-            self.compiled_templates_mock(),
+        }
+        templates = {
+            "anti-affinity-node": self._create_template_validator(
+                expected={"app": "app", "process": "web"},
+                return_value=k8s_fixtures.anti_affinity_node,
+            ),
+        }
+
+        anti_affinity_node = k8s_builders.get_anti_affinity_node(
+            deployment_config, "web", templates
         )
+
         self.assertEqual(anti_affinity_node, k8s_fixtures.anti_affinity_node)
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_zone_not_enabled_default(self, parse_yaml_mock):
         """Returns None if not enabled by default"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_zone
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {"default": {"is_anti_affinity_zone_enabled": False}},
+        }
+        templates = {}
+
         anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
-            {"app": "app", "affinity": {"default": {"is_anti_affinity_zone_enabled": False}}},
-            "web",
-            self.compiled_templates_mock(),
+            deployment_config, "web", templates
         )
 
         self.assertEqual(anti_affinity_zone, None)
@@ -132,46 +143,65 @@ class TestK8sBuilders(TestCase):
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_zone_not_enabled_for_process(self, parse_yaml_mock):
         """Returns None if not enabled for the process"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_zone
-        anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
-            {
-                "app": "app",
-                "affinity": {
-                    "default": {"is_anti_affinity_zone_enabled": False},
-                    "web": {"is_anti_affinity_zone_enabled": False},
-                },
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {
+                "default": {"is_anti_affinity_zone_enabled": False},
+                "web": {"is_anti_affinity_zone_enabled": False},
             },
-            "web",
-            self.compiled_templates_mock(),
+        }
+        templates = {}
+
+        anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
+            deployment_config, "web", templates
         )
+
         self.assertEqual(anti_affinity_zone, None)
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_zone_enabled_default(self, parse_yaml_mock):
         """Returns the anti affinity zone if enabled by default"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_zone
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {"default": {"is_anti_affinity_zone_enabled": True}},
+        }
+        templates = {
+            "anti-affinity-zone": self._create_template_validator(
+                expected={"app": "app", "process": "web"},
+                return_value=k8s_fixtures.anti_affinity_zone,
+            ),
+        }
+
         anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
-            {"app": "app", "affinity": {"default": {"is_anti_affinity_zone_enabled": True}}},
-            "web",
-            self.compiled_templates_mock(),
+            deployment_config, "web", templates
         )
+
         self.assertEqual(anti_affinity_zone, k8s_fixtures.anti_affinity_zone)
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_get_anti_affinity_zone_enabled_for_process(self, parse_yaml_mock):
         """Returns the anti affinity zone if enabled for the process"""
-        parse_yaml_mock.return_value = k8s_fixtures.anti_affinity_zone
-        anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
-            {
-                "app": "app",
-                "affinity": {
-                    "default": {"is_anti_affinity_zone_enabled": False},
-                    "web": {"is_anti_affinity_zone_enabled": True},
-                },
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
+            "app": "app",
+            "affinity": {
+                "default": {"is_anti_affinity_zone_enabled": False},
+                "web": {"is_anti_affinity_zone_enabled": True},
             },
-            "web",
-            self.compiled_templates_mock(),
+        }
+        templates = {
+            "anti-affinity-zone": self._create_template_validator(
+                expected={"app": "app", "process": "web"},
+                return_value=k8s_fixtures.anti_affinity_zone,
+            ),
+        }
+
+        anti_affinity_zone = k8s_builders.get_anti_affinity_zone(
+            deployment_config, "web", templates,
         )
+
         self.assertEqual(anti_affinity_zone, k8s_fixtures.anti_affinity_zone)
 
     def test_get_image_name_branch(self):
@@ -434,23 +464,6 @@ class TestK8sBuilders(TestCase):
             },
         )
 
-    def test_set_namespace_no_namespace(self):
-        """Return None if no namespace in config and should not modify resources definition"""
-        app_config = {}
-        resources = [
-            {"metadata": {"name": "hpa"}},
-            {"metadata": {"name": "deployment"}},
-        ]
-
-        namespace = k8s_builders.set_namespace(
-            app_config, resources, self.compiled_templates_mock()
-        )
-
-        self.assertEqual(namespace, None)
-        self.assertEqual(
-            resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}},]
-        )
-
     def test_set_environment_variables(self):
         """Should correctly attach the environment variables."""
         deployment_config = {
@@ -490,20 +503,38 @@ class TestK8sBuilders(TestCase):
             ],
         )
 
-    @patch("yaml_lib.parse_yaml", autospec=True)
-    def test_set_namespace_with_namespace(self, parse_yaml_mock):
-        """Return namespace and should modify resources definition"""
-        parse_yaml_mock.return_value = k8s_fixtures.namespace
-
-        app_config = {"namespace": "namespace"}
+    def test_set_namespace_no_namespace(self):
+        """Return None if no namespace in config and should not modify resources definition"""
+        deployment_config = {}
         resources = [
             {"metadata": {"name": "hpa"}},
             {"metadata": {"name": "deployment"}},
         ]
+        templates = {}
 
-        namespace = k8s_builders.set_namespace(
-            app_config, resources, self.compiled_templates_mock()
+        namespace = k8s_builders.set_namespace(deployment_config, resources, templates)
+
+        self.assertEqual(namespace, None)
+        self.assertEqual(
+            resources, [{"metadata": {"name": "hpa"}}, {"metadata": {"name": "deployment"}}]
         )
+
+    @patch("yaml_lib.parse_yaml", autospec=True)
+    def test_set_namespace_with_namespace(self, parse_yaml_mock):
+        """Return namespace and should modify resources definition"""
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {"namespace": "namespace"}
+        resources = [
+            {"metadata": {"name": "hpa"}},
+            {"metadata": {"name": "deployment"}},
+        ]
+        templates = {
+            "namespace": self._create_template_validator(
+                expected={"name": "namespace"}, return_value=k8s_fixtures.namespace,
+            )
+        }
+
+        namespace = k8s_builders.set_namespace(deployment_config, resources, templates)
 
         self.assertEqual(namespace, k8s_fixtures.namespace)
         self.assertEqual(
@@ -629,18 +660,20 @@ class TestK8sBuilders(TestCase):
 
     def test_set_replicas_min_replicas_zero(self):
         """Return None and set replicas to 0 in the recipe"""
-        app_config = {"app": "app", "scales": {"web": {"minReplicas": 0}}}
+        deployment_config = {"app": "app", "scales": {"web": {"minReplicas": 0}}}
         recipe = {"spec": {}}
-        hpa = k8s_builders.set_replicas(app_config, "web", recipe, self.compiled_templates_mock())
+        templates = {}
+
+        hpa = k8s_builders.set_replicas(deployment_config, "web", recipe, templates)
+
         self.assertEqual(hpa, None)
         self.assertEqual(recipe, {"spec": {"replicas": 0}})
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_set_replicas_with_process_default(self, parse_yaml_mock):
         """Return the hpa configuration"""
-        parse_yaml_mock.return_value = k8s_fixtures.hpa
-
-        app_config = {
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
             "app": "app",
             "scales": {
                 "default": {
@@ -651,17 +684,29 @@ class TestK8sBuilders(TestCase):
             },
         }
         recipe = {"spec": {}}
+        templates = {
+            "hpa": self._create_template_validator(
+                expected={
+                    "app": "app",
+                    "process": "web",
+                    "name": "app----web",
+                    "minReplicas": 5,
+                    "maxReplicas": 15,
+                    "targetCPUUtilizationPercentage": 90,
+                },
+                return_value=k8s_fixtures.hpa,
+            )
+        }
 
-        hpa = k8s_builders.set_replicas(app_config, "web", recipe, self.compiled_templates_mock())
+        hpa = k8s_builders.set_replicas(deployment_config, "web", recipe, templates)
 
         self.assertEqual(hpa, k8s_fixtures.hpa)
 
     @patch("yaml_lib.parse_yaml", autospec=True)
     def test_set_replicas_with_process_configuration(self, parse_yaml_mock):
         """Return the hpa configuration"""
-        parse_yaml_mock.return_value = k8s_fixtures.hpa
-
-        app_config = {
+        parse_yaml_mock.side_effect = lambda x: x
+        deployment_config = {
             "app": "app",
             "scales": {
                 "default": {
@@ -673,8 +718,21 @@ class TestK8sBuilders(TestCase):
             },
         }
         recipe = {"spec": {}}
+        templates = {
+            "hpa": self._create_template_validator(
+                expected={
+                    "app": "app",
+                    "process": "web",
+                    "name": "app----web",
+                    "minReplicas": 5,
+                    "maxReplicas": 15,
+                    "targetCPUUtilizationPercentage": 90,
+                },
+                return_value=k8s_fixtures.hpa,
+            )
+        }
 
-        hpa = k8s_builders.set_replicas(app_config, "web", recipe, self.compiled_templates_mock())
+        hpa = k8s_builders.set_replicas(deployment_config, "web", recipe, templates)
 
         self.assertEqual(hpa, k8s_fixtures.hpa)
 
@@ -871,7 +929,7 @@ class TestK8sBuilders(TestCase):
     @patch("nestor_api.lib.k8s.builders.load_templates", autospec=True)
     @patch("nestor_api.lib.k8s.builders.get_sections_for_cronjob", autospec=True)
     @patch("nestor_api.lib.k8s.builders.get_sections_for_process", autospec=True)
-    def test_build_yaml(
+    def test_build_deployment_yaml(
         self, get_sections_for_process_mock, get_sections_for_cronjobs_mock, _load_templates_mock
     ):
         """Should correctly concatenate the built sections."""
@@ -896,7 +954,7 @@ class TestK8sBuilders(TestCase):
         }
 
         # Test
-        yaml_output = k8s_builders.build_yaml(deployment_config, "/path/to/templates", "tag")
+        yaml_output = k8s_builders.build_deployment_yaml(deployment_config, {}, "tag")
 
         # Assertions
         self.assertEqual(
@@ -914,15 +972,6 @@ cronjob: cronjob-1
 ---
 cronjob: cronjob-2""",
         )
-
-    def _create_template_validator(self, expected: dict, return_value: dict):
-        """A test helper validating the arguments passed to a template."""
-
-        def template_validator(parameters):
-            self.assertEqual(parameters, expected)
-            return return_value
-
-        return template_validator
 
     @patch("nestor_api.lib.k8s.builders.set_namespace", autospec=True)
     @patch("nestor_api.lib.k8s.builders.set_environment_variables", autospec=True)
@@ -1300,3 +1349,30 @@ cronjob: cronjob-2""",
         set_environment_variables_mock.assert_called_once()
         set_node_selector_mock.assert_called_once()
         set_namespace_mock.assert_called_once()
+
+    def test_build_ingress_yaml(self):
+        # Mocks
+        deployment_config = {
+            "app": "my-app",
+            "domain": "my-app.com",
+            "domain_prefix": "-staging",
+        }
+        templates = {
+            "ingress-app": self._create_template_validator(
+                expected={
+                    "app": "my-app",
+                    "process": "web",
+                    "name": "my-app----web",
+                    "namespace": "default",
+                    "domain": "my-app.com",
+                    "domain_prefix": "-staging",
+                },
+                return_value="template: ingress-app\n",
+            ),
+        }
+
+        # Test
+        result = k8s_builders.build_ingress_yaml(deployment_config, "web", templates)
+
+        # Assertions
+        self.assertEqual(result, "---\ntemplate: ingress-app\n")
