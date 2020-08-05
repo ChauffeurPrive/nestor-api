@@ -48,11 +48,6 @@ APPLICATION_SCHEMA = {
                     "example": "3600",
                     "description": "Define the timeout on the ingress controller",
                 },
-                "tplMountDirectory": {
-                    "type": "string",
-                    "example": "/opt/my-folder",
-                    "description": "Define the folder to mount a file through ConfigMap or others",
-                },
                 "tplSessionAffinity": {
                     "type": "boolean",
                     "example": "false",
