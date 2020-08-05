@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: '{{name}}'
+  labels:
+    type: nestor-job
+    app: '{{app}}'
+    project: '{{project}}'
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        type: nestor-job
+        app: '{{app}}'
+        process: '{{process}}'
+        project: '{{project}}'
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: '{{app}}'
+          image: '{{image}}'
+          imagePullPolicy: IfNotPresent
