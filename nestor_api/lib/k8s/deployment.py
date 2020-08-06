@@ -8,6 +8,7 @@ import nestor_api.lib.io as io
 import nestor_api.utils.list as list_utils
 
 from . import builders, cli
+from .enums.k8s_resource_type import K8sResourceType
 
 WEB_PROCESS_NAME = "web"
 
@@ -37,6 +38,61 @@ def deploy_app_ingress(deployment_config: dict, process_name: str, templates: di
     """Deploy the ingress configuration of an app."""
     ingress_yaml = builders.build_ingress_yaml(deployment_config, process_name, templates)
     write_and_deploy_configuration(deployment_config["cluster_name"], ingress_yaml)
+
+
+def _build_process_status(item: dict) -> dict:
+    return {
+        "name": item["spec"]["template"]["metadata"]["labels"]["process"],
+        "image": item["spec"]["template"]["spec"]["containers"][0]["image"],
+        "command": item["spec"]["template"]["spec"]["containers"][0]["args"][2],
+    }
+
+
+def _build_cronjob_status(item: dict) -> dict:
+    job = _build_process_status(item["spec"]["jobTemplate"])
+    return {**job, "schedule": item["spec"]["schedule"]}
+
+
+def _build_variable_status(item: dict) -> list:
+    if item["kind"] == "CronJob":
+        item = item["spec"]["jobTemplate"]
+
+    return item["spec"]["template"]["spec"]["containers"][0]["env"]
+
+
+def get_deployment_status(deployment_config: dict) -> dict:
+    """Retrieve the deployment status of a deployed application."""
+    deployed_configuration = cli.fetch_resource_configuration(
+        deployment_config["cluster_name"],
+        deployment_config["namespace"],
+        deployment_config["app"],
+        [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+    )
+    items = deployed_configuration["items"]
+
+    status: dict = {
+        "processes": [],
+        "cronjobs": [],
+        "env": [],
+    }
+    if len(items) == 0:
+        return status
+
+    for item in items:
+        if item["kind"] == "Deployment":
+            process = _build_process_status(item)
+            status["processes"].append(process)
+        elif item["kind"] == "CronJob":
+            cronjob = _build_cronjob_status(item)
+            status["cronjobs"].append(cronjob)
+        else:
+            raise ValueError(f'Unknown item kind "{item["kind"]}"')
+
+    # Take the first item, maybe the only one, to extract the environment variables
+    # from it. The one we select is not important because they all share the same variables.
+    status["env"] = _build_variable_status(items[0])
+
+    return status
 
 
 def has_process(deployment_config: dict, process_name: str) -> bool:

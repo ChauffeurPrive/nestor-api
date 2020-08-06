@@ -14,7 +14,7 @@ class TestK8sCli(TestCase):
         io_mock.execute.return_value = '{"key": "value"}'
 
         result = cli.fetch_resource_configuration(
-            "cluster", "namespace", "my-app", K8sResourceType.DEPLOYMENT
+            "cluster", "namespace", "my-app", [K8sResourceType.DEPLOYMENTS]
         )
 
         self.assertEqual(result, {"key": "value"})
@@ -23,7 +23,33 @@ class TestK8sCli(TestCase):
                 "kubectl "
                 "--context cluster "
                 "--namespace namespace "
-                "get deployment "
+                "get deployments "
+                "--output=json "
+                "--selector app=my-app"
+            ),
+            env={**os.environ, "HTTP_PROXY": "k8s-proxy.my-domain.com"},
+        )
+
+    @patch("nestor_api.lib.k8s.cli.K8sConfiguration", autospec=True)
+    @patch("nestor_api.lib.k8s.cli.io", autospec=True)
+    def test_fetch_resource_configuration_deployment_and_cronjob(self, io_mock, config_mock):
+        config_mock.get_http_proxy.return_value = "k8s-proxy.my-domain.com"
+        io_mock.execute.return_value = '{"key": "value"}'
+
+        result = cli.fetch_resource_configuration(
+            "cluster",
+            "namespace",
+            "my-app",
+            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+        )
+
+        self.assertEqual(result, {"key": "value"})
+        io_mock.execute.assert_called_once_with(
+            (
+                "kubectl "
+                "--context cluster "
+                "--namespace namespace "
+                "get deployments,cronjobs "
                 "--output=json "
                 "--selector app=my-app"
             ),

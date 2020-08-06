@@ -92,3 +92,51 @@ CRONJOB_SPEC_EXPECTED_OUTPUT = """spec:
       job: spec
   schedule: '*/30 * * * *'
 """
+
+# get_deployment_status
+DEPLOYMENT_STATUS_ITEM_PROCESS = {
+    "kind": "Deployment",
+    "spec": {
+        "template": {
+            "metadata": {"labels": {"process": "my-process"}},
+            "spec": {
+                "containers": [
+                    {
+                        "image": "0.1.0-sha-1ab23cd",
+                        "args": ["/bin/bash", "-c", "npm start:process"],
+                        "env": [
+                            {"name": "VAR_A", "value": "VALUE_A"},
+                            {"name": "VAR_B", "value": "VALUE_B"},
+                        ],
+                    },
+                ],
+            },
+        },
+    },
+}
+
+DEPLOYMENT_STATUS_ITEM_CRONJOB = {
+    "kind": "CronJob",
+    "spec": {
+        "schedule": "0 0 * * *",
+        "jobTemplate": {
+            "spec": {
+                "template": {
+                    "metadata": {"labels": {"process": "my-cron"}},
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "0.1.0-sha-1ab23cd",
+                                "args": ["/bin/bash", "-c", "npm start:cron"],
+                                "env": [
+                                    {"name": "VAR_A", "value": "VALUE_A"},
+                                    {"name": "VAR_B", "value": "VALUE_B"},
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+    },
+}

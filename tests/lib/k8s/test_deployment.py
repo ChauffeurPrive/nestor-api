@@ -2,6 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 
 import nestor_api.lib.k8s.deployment as k8s_lib
+from nestor_api.lib.k8s.enums.k8s_resource_type import K8sResourceType
+import tests.__fixtures__.k8s as k8s_fixtures
 
 
 class TestK8sDeployment(TestCase):
@@ -93,6 +95,132 @@ class TestK8sDeployment(TestCase):
         result = k8s_lib.has_process(deployment_config, "web")
 
         self.assertTrue(result)
+
+    @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
+    def test_get_deployment_status(self, cli_mock):
+        """Should correctly retrieve and format the deployment status."""
+        cli_mock.fetch_resource_configuration.return_value = {
+            "items": [
+                k8s_fixtures.DEPLOYMENT_STATUS_ITEM_PROCESS,
+                k8s_fixtures.DEPLOYMENT_STATUS_ITEM_CRONJOB,
+            ],
+        }
+        deployment_config = {
+            "cluster_name": "my-cluster",
+            "namespace": "my-namespace",
+            "app": "my-app",
+        }
+
+        report = k8s_lib.get_deployment_status(deployment_config)
+
+        self.assertEqual(
+            report,
+            {
+                "processes": [
+                    {
+                        "name": "my-process",
+                        "image": "0.1.0-sha-1ab23cd",
+                        "command": "npm start:process",
+                    },
+                ],
+                "cronjobs": [
+                    {
+                        "name": "my-cron",
+                        "image": "0.1.0-sha-1ab23cd",
+                        "command": "npm start:cron",
+                        "schedule": "0 0 * * *",
+                    },
+                ],
+                "env": [
+                    {"name": "VAR_A", "value": "VALUE_A"},
+                    {"name": "VAR_B", "value": "VALUE_B"},
+                ],
+            },
+        )
+        cli_mock.fetch_resource_configuration.assert_called_once_with(
+            "my-cluster",
+            "my-namespace",
+            "my-app",
+            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+        )
+
+    @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
+    def test_get_deployment_status_when_nothing(self, cli_mock):
+        """Should return an empty deployment status."""
+        cli_mock.fetch_resource_configuration.return_value = {
+            "items": [],
+        }
+        deployment_config = {
+            "cluster_name": "my-cluster",
+            "namespace": "my-namespace",
+            "app": "my-app",
+        }
+
+        report = k8s_lib.get_deployment_status(deployment_config)
+
+        self.assertEqual(
+            report, {"processes": [], "cronjobs": [], "env": []},
+        )
+        cli_mock.fetch_resource_configuration.assert_called_once_with(
+            "my-cluster",
+            "my-namespace",
+            "my-app",
+            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+        )
+
+    @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
+    def test_get_deployment_status_when_only_crons(self, cli_mock):
+        """Should correctly retrieve the env from the cronjob."""
+        cli_mock.fetch_resource_configuration.return_value = {
+            "items": [k8s_fixtures.DEPLOYMENT_STATUS_ITEM_CRONJOB],
+        }
+        deployment_config = {
+            "cluster_name": "my-cluster",
+            "namespace": "my-namespace",
+            "app": "my-app",
+        }
+
+        report = k8s_lib.get_deployment_status(deployment_config)
+
+        self.assertEqual(
+            report,
+            {
+                "processes": [],
+                "cronjobs": [
+                    {
+                        "name": "my-cron",
+                        "image": "0.1.0-sha-1ab23cd",
+                        "command": "npm start:cron",
+                        "schedule": "0 0 * * *",
+                    },
+                ],
+                "env": [
+                    {"name": "VAR_A", "value": "VALUE_A"},
+                    {"name": "VAR_B", "value": "VALUE_B"},
+                ],
+            },
+        )
+        cli_mock.fetch_resource_configuration.assert_called_once_with(
+            "my-cluster",
+            "my-namespace",
+            "my-app",
+            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+        )
+
+    @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
+    def test_get_deployment_status_when_unknown_item(self, cli_mock):
+        """Should raise an Error when an unknown item is encountered."""
+        cli_mock.fetch_resource_configuration.return_value = {
+            "items": [{"kind": "Unknown"}],
+        }
+        deployment_config = {
+            "cluster_name": "my-cluster",
+            "namespace": "my-namespace",
+            "app": "my-app",
+        }
+
+        with self.assertRaisesRegex(Exception, 'Unknown item kind "Unknown"'):
+            k8s_lib.get_deployment_status(deployment_config)
 
     def test_has_process_when_false(self):
         """Should return False."""
