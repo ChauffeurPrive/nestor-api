@@ -31,6 +31,26 @@ class TestGitLibrary(TestCase):
             ]
         )
 
+    def test_is_branch_existing_with_existing_branch(self, io_mock):
+        io_mock.execute.return_value = "* feature/branch remotes/origin/feature/branch"
+
+        result = git.is_branch_existing("/path_to/a_git_repository", "feature/branch")
+
+        io_mock.execute.assert_has_calls(
+            [call("git branch --list feature/branch", "/path_to/a_git_repository"),]
+        )
+        self.assertEqual(result, True)
+
+    def test_is_branch_existing_with_non_existing_branch(self, io_mock):
+        io_mock.execute.return_value = ""
+
+        result = git.is_branch_existing("/path_to/a_git_repository", "feature/branch")
+
+        io_mock.execute.assert_has_calls(
+            [call("git branch --list feature/branch", "/path_to/a_git_repository"),]
+        )
+        self.assertEqual(result, False)
+
     @patch("nestor_api.lib.git.update_pristine_repository", autospec=True)
     def test_create_working_repository(self, update_pristine_repository_mock, io_mock):
         update_pristine_repository_mock.return_value = "/fixtures-nestor-pristine/my-app"

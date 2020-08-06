@@ -17,6 +17,12 @@ def branch(repository_dir: str, branch_name: str) -> None:
     io.execute(f'git checkout{"" if exists else " -b"} {branch_name}', repository_dir)
 
 
+def is_branch_existing(repository_dir: str, branch_name: str) -> bool:
+    """Determines if a branch exists on the repository"""
+    stdout = io.execute(f"git branch --list {branch_name}", repository_dir)
+    return len(stdout) != 0
+
+
 def create_working_repository(app_name: str, git_url: str) -> str:
     """Create a working copy of an app's repository"""
     pristine_directory = update_pristine_repository(app_name, git_url)
