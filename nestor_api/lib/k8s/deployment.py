@@ -1,6 +1,7 @@
 """Kubernetes deployment library."""
 
 import os
+from typing import Optional
 
 from nestor_api.config.k8s import K8sConfiguration
 import nestor_api.lib.config as config
@@ -13,14 +14,13 @@ from .enums.k8s_resource_type import K8sResourceType
 WEB_PROCESS_NAME = "web"
 
 
-def deploy_app(deployment_config: dict, config_dir: str, tag_to_deploy: str) -> None:
+def deploy_app(deployment_config: dict, config_dir: str, tag_to_deploy: str) -> dict:
     """Deploy a new version of an application on kubernetes
     following the provided configuration."""
     templates_path = os.path.join(config_dir, K8sConfiguration.get_templates_dir())
     templates = builders.load_templates(templates_path)
 
-    # Awaiting for implementation
-    # --> Fetch the previous configuration
+    previous_status = get_deployment_status(deployment_config)
 
     if has_process(deployment_config, WEB_PROCESS_NAME):
         deploy_app_ingress(deployment_config, WEB_PROCESS_NAME, templates)
@@ -28,10 +28,10 @@ def deploy_app(deployment_config: dict, config_dir: str, tag_to_deploy: str) -> 
     deployment_yaml = builders.build_deployment_yaml(deployment_config, templates, tag_to_deploy)
     write_and_deploy_configuration(deployment_config["cluster_name"], deployment_yaml)
 
-    # Awaiting for implementation
-    # --> Fetch the new configuration
-    # --> Compare the 2 configurations and generate a report
-    # --> Return the report
+    new_status = get_deployment_status(deployment_config)
+    status_changes = get_deployement_statuses_diff(previous_status, new_status)
+
+    return status_changes
 
 
 def deploy_app_ingress(deployment_config: dict, process_name: str, templates: dict):
@@ -93,6 +93,50 @@ def get_deployment_status(deployment_config: dict) -> dict:
     status["env"] = _build_variable_status(items[0])
 
     return status
+
+
+def _get_name(item: dict) -> str:
+    return item["name"]
+
+
+def _compare_job_keys(job_1: dict, job_2: dict) -> Optional[dict]:
+    differences = {}
+    for key in job_1:
+        if job_1[key] != job_2[key]:
+            differences[key] = {"old": job_1[key], "new": job_2[key]}
+
+    return {"name": job_1["name"], "values": differences} if len(differences) > 0 else None
+
+
+def _compare_env_vars(var_1: dict, var_2: dict) -> Optional[dict]:
+    value_1 = var_1["value"] if "value" in var_1 else var_1["valueFrom"]
+    value_2 = var_2["value"] if "value" in var_2 else var_2["valueFrom"]
+    return (
+        None
+        if value_1 == value_2
+        else {"name": var_1["name"], "value": {"old": value_1, "new": value_2}}
+    )
+
+
+def get_deployement_statuses_diff(deployment_1: dict, deployment_2: dict) -> dict:
+    """Compute the differences between 2 deployement statuses."""
+    return {
+        "processes": list_utils.compute_diff(
+            deployment_1["processes"],
+            deployment_2["processes"],
+            key=_get_name,
+            comparator=_compare_job_keys,
+        ),
+        "cronjobs": list_utils.compute_diff(
+            deployment_1["cronjobs"],
+            deployment_2["cronjobs"],
+            key=_get_name,
+            comparator=_compare_job_keys,
+        ),
+        "env": list_utils.compute_diff(
+            deployment_1["env"], deployment_2["env"], key=_get_name, comparator=_compare_env_vars
+        ),
+    }
 
 
 def has_process(deployment_config: dict, process_name: str) -> bool:
