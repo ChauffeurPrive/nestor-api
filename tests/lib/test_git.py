@@ -142,6 +142,13 @@ class TestGitLibrary(TestCase):
             "git rebase feature/branch --keep-empty", "/path_to/a_git_repository",
         )
 
+    def test_rebase_with_onto_ref(self, io_mock):
+        git.rebase("/path_to/a_git_repository", "feature/branch", onto="tag")
+
+        io_mock.execute.assert_called_once_with(
+            "git rebase --onto tag feature/branch --keep-empty", "/path_to/a_git_repository",
+        )
+
     @patch("nestor_api.lib.git.get_last_commit_hash", autospec=True)
     def test_tag(self, get_last_commit_hash_mock, io_mock):
         get_last_commit_hash_mock.return_value = "1ab2c3d"
