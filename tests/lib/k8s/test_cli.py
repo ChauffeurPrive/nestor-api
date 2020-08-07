@@ -3,7 +3,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 import nestor_api.lib.k8s.cli as cli
-from nestor_api.lib.k8s.enums.k8s_resource_type import K8sResourceType
+from nestor_api.lib.k8s.enums.k8s_resource_kind import K8sResourceKind
 
 
 class TestK8sCli(TestCase):
@@ -14,7 +14,7 @@ class TestK8sCli(TestCase):
         io_mock.execute.return_value = '{"key": "value"}'
 
         result = cli.fetch_resource_configuration(
-            "cluster", "namespace", "my-app", [K8sResourceType.DEPLOYMENTS]
+            "cluster", "namespace", "my-app", [K8sResourceKind.DEPLOYMENT]
         )
 
         self.assertEqual(result, {"key": "value"})
@@ -23,7 +23,7 @@ class TestK8sCli(TestCase):
                 "kubectl "
                 "--context cluster "
                 "--namespace namespace "
-                "get deployments "
+                "get Deployment "
                 "--output=json "
                 "--selector app=my-app"
             ),
@@ -37,10 +37,7 @@ class TestK8sCli(TestCase):
         io_mock.execute.return_value = '{"key": "value"}'
 
         result = cli.fetch_resource_configuration(
-            "cluster",
-            "namespace",
-            "my-app",
-            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+            "cluster", "namespace", "my-app", [K8sResourceKind.DEPLOYMENT, K8sResourceKind.CRONJOB],
         )
 
         self.assertEqual(result, {"key": "value"})
@@ -49,7 +46,7 @@ class TestK8sCli(TestCase):
                 "kubectl "
                 "--context cluster "
                 "--namespace namespace "
-                "get deployments,cronjobs "
+                "get Deployment,CronJob "
                 "--output=json "
                 "--selector app=my-app"
             ),

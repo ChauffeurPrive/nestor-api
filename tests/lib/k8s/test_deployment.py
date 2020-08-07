@@ -2,14 +2,14 @@ from unittest import TestCase
 from unittest.mock import patch
 
 import nestor_api.lib.k8s.deployment as k8s_lib
-from nestor_api.lib.k8s.enums.k8s_resource_type import K8sResourceType
+from nestor_api.lib.k8s.enums.k8s_resource_kind import K8sResourceKind
 import tests.__fixtures__.k8s as k8s_fixtures
 
 
 class TestK8sDeployment(TestCase):
     @patch("nestor_api.lib.k8s.deployment.write_and_deploy_configuration", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.deploy_app_ingress", autospec=True)
-    @patch("nestor_api.lib.k8s.deployment.get_deployement_statuses_diff", autospec=True)
+    @patch("nestor_api.lib.k8s.deployment.get_deployment_statuses_diff", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.get_deployment_status", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.K8sConfiguration", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.has_process", autospec=True)
@@ -19,8 +19,8 @@ class TestK8sDeployment(TestCase):
         builders_mock,
         has_web_process_mock,
         k8s_config_mock,
-        get_deployement_status_mock,
-        get_deployement_statuses_diff_mock,
+        get_deployment_status_mock,
+        get_deployment_statuses_diff_mock,
         deploy_app_ingress_mock,
         write_and_deploy_configuration_mock,
     ):
@@ -31,7 +31,7 @@ class TestK8sDeployment(TestCase):
         has_web_process_mock.return_value = True
         builders_mock.build_deployment_yaml.return_value = "deployment: app"
         report = {}
-        get_deployement_statuses_diff_mock.return_value = report
+        get_deployment_statuses_diff_mock.return_value = report
 
         # Setup
         deployment_config = {"cluster_name": "my-cluster"}
@@ -44,14 +44,14 @@ class TestK8sDeployment(TestCase):
 
         builders_mock.load_templates.assert_called_once_with("/config/templates-dir")
 
-        self.assertEqual(get_deployement_status_mock.call_count, 2)
-        get_deployement_statuses_diff_mock.assert_called_once()
+        self.assertEqual(get_deployment_status_mock.call_count, 2)
+        get_deployment_statuses_diff_mock.assert_called_once()
         deploy_app_ingress_mock.assert_called_once()
         write_and_deploy_configuration_mock.assert_called_once_with("my-cluster", "deployment: app")
 
     @patch("nestor_api.lib.k8s.deployment.write_and_deploy_configuration", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.deploy_app_ingress", autospec=True)
-    @patch("nestor_api.lib.k8s.deployment.get_deployement_statuses_diff", autospec=True)
+    @patch("nestor_api.lib.k8s.deployment.get_deployment_statuses_diff", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.get_deployment_status", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.K8sConfiguration", autospec=True)
     @patch("nestor_api.lib.k8s.deployment.has_process", autospec=True)
@@ -61,8 +61,8 @@ class TestK8sDeployment(TestCase):
         builders_mock,
         has_web_process_mock,
         k8s_config_mock,
-        get_deployement_status_mock,
-        get_deployement_statuses_diff_mock,
+        get_deployment_status_mock,
+        get_deployment_statuses_diff_mock,
         deploy_app_ingress_mock,
         write_and_deploy_configuration_mock,
     ):
@@ -73,7 +73,7 @@ class TestK8sDeployment(TestCase):
         has_web_process_mock.return_value = False
         builders_mock.build_deployment_yaml.return_value = "deployment: app"
         report = {}
-        get_deployement_statuses_diff_mock.return_value = report
+        get_deployment_statuses_diff_mock.return_value = report
 
         # Setup
         deployment_config = {"cluster_name": "my-cluster"}
@@ -86,8 +86,8 @@ class TestK8sDeployment(TestCase):
 
         builders_mock.load_templates.assert_called_once_with("/config/templates-dir")
 
-        self.assertEqual(get_deployement_status_mock.call_count, 2)
-        get_deployement_statuses_diff_mock.assert_called_once()
+        self.assertEqual(get_deployment_status_mock.call_count, 2)
+        get_deployment_statuses_diff_mock.assert_called_once()
 
         deploy_app_ingress_mock.assert_not_called()
         write_and_deploy_configuration_mock.assert_called_once_with("my-cluster", "deployment: app")
@@ -162,7 +162,7 @@ class TestK8sDeployment(TestCase):
             "my-cluster",
             "my-namespace",
             "my-app",
-            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+            [K8sResourceKind.DEPLOYMENT, K8sResourceKind.CRONJOB],
         )
 
     @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
@@ -186,7 +186,7 @@ class TestK8sDeployment(TestCase):
             "my-cluster",
             "my-namespace",
             "my-app",
-            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+            [K8sResourceKind.DEPLOYMENT, K8sResourceKind.CRONJOB],
         )
 
     @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
@@ -225,7 +225,7 @@ class TestK8sDeployment(TestCase):
             "my-cluster",
             "my-namespace",
             "my-app",
-            [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+            [K8sResourceKind.DEPLOYMENT, K8sResourceKind.CRONJOB],
         )
 
     @patch("nestor_api.lib.k8s.deployment.cli", autospec=True)
@@ -264,7 +264,7 @@ class TestK8sDeployment(TestCase):
         }
         new_status = previous_status
 
-        diff = k8s_lib.get_deployement_statuses_diff(previous_status, new_status)
+        diff = k8s_lib.get_deployment_statuses_diff(previous_status, new_status)
 
         self.assertEqual(
             diff,
@@ -322,7 +322,7 @@ class TestK8sDeployment(TestCase):
             ],
         }
 
-        diff = k8s_lib.get_deployement_statuses_diff(previous_status, new_status)
+        diff = k8s_lib.get_deployment_statuses_diff(previous_status, new_status)
 
         self.assertEqual(
             diff,

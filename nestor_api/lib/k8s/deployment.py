@@ -9,7 +9,7 @@ import nestor_api.lib.io as io
 import nestor_api.utils.list as list_utils
 
 from . import builders, cli
-from .enums.k8s_resource_type import K8sResourceType
+from .enums.k8s_resource_kind import K8sResourceKind
 
 WEB_PROCESS_NAME = "web"
 
@@ -29,7 +29,7 @@ def deploy_app(deployment_config: dict, config_dir: str, tag_to_deploy: str) -> 
     write_and_deploy_configuration(deployment_config["cluster_name"], deployment_yaml)
 
     new_status = get_deployment_status(deployment_config)
-    status_changes = get_deployement_statuses_diff(previous_status, new_status)
+    status_changes = get_deployment_statuses_diff(previous_status, new_status)
 
     return status_changes
 
@@ -54,7 +54,7 @@ def _build_cronjob_status(item: dict) -> dict:
 
 
 def _build_variable_status(item: dict) -> list:
-    if item["kind"] == "CronJob":
+    if item["kind"] == K8sResourceKind.CRONJOB.value:
         item = item["spec"]["jobTemplate"]
 
     return item["spec"]["template"]["spec"]["containers"][0]["env"]
@@ -66,7 +66,7 @@ def get_deployment_status(deployment_config: dict) -> dict:
         deployment_config["cluster_name"],
         deployment_config["namespace"],
         deployment_config["app"],
-        [K8sResourceType.DEPLOYMENTS, K8sResourceType.CRONJOBS],
+        [K8sResourceKind.DEPLOYMENT, K8sResourceKind.CRONJOB],
     )
     items = deployed_configuration["items"]
 
@@ -79,10 +79,10 @@ def get_deployment_status(deployment_config: dict) -> dict:
         return status
 
     for item in items:
-        if item["kind"] == "Deployment":
+        if item["kind"] == K8sResourceKind.DEPLOYMENT.value:
             process = _build_process_status(item)
             status["processes"].append(process)
-        elif item["kind"] == "CronJob":
+        elif item["kind"] == K8sResourceKind.CRONJOB.value:
             cronjob = _build_cronjob_status(item)
             status["cronjobs"].append(cronjob)
         else:
@@ -105,7 +105,7 @@ def _compare_job_keys(job_1: dict, job_2: dict) -> Optional[dict]:
         if job_1[key] != job_2[key]:
             differences[key] = {"old": job_1[key], "new": job_2[key]}
 
-    return {"name": job_1["name"], "values": differences} if len(differences) > 0 else None
+    return {"name": _get_name(job_1), "values": differences} if len(differences) > 0 else None
 
 
 def _compare_env_vars(var_1: dict, var_2: dict) -> Optional[dict]:
@@ -118,8 +118,8 @@ def _compare_env_vars(var_1: dict, var_2: dict) -> Optional[dict]:
     )
 
 
-def get_deployement_statuses_diff(deployment_1: dict, deployment_2: dict) -> dict:
-    """Compute the differences between 2 deployement statuses."""
+def get_deployment_statuses_diff(deployment_1: dict, deployment_2: dict) -> dict:
+    """Compute the differences between 2 deployment statuses."""
     return {
         "processes": list_utils.compute_diff(
             deployment_1["processes"],

@@ -3,11 +3,11 @@
 from enum import Enum
 
 
-class K8sResourceType(Enum):
+class K8sResourceKind(Enum):
     """An enum representing the different resources kinds"""
 
-    DEPLOYMENTS = "deployments"
-    CRONJOBS = "cronjobs"
+    DEPLOYMENT = "Deployment"
+    CRONJOB = "CronJob"
 
     def __str__(self):
         return str(self.value)
