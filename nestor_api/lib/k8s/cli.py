@@ -2,11 +2,12 @@
 
 import json
 import os
+from typing import List
 
 from nestor_api.config.k8s import K8sConfiguration
 import nestor_api.lib.io as io
 
-from .enums.k8s_resource_type import K8sResourceType
+from .enums.k8s_resource_kind import K8sResourceKind
 
 
 def _build_kubectl_env() -> dict:
@@ -17,14 +18,15 @@ def _build_kubectl_env() -> dict:
 
 
 def fetch_resource_configuration(
-    cluster_name: str, namespace: str, app_name: str, resource_type: K8sResourceType
+    cluster_name: str, namespace: str, app_name: str, resources: List[K8sResourceKind]
 ) -> dict:
     """Fetch a resource's configuration using kubectl."""
+    resources_str = ",".join([str(resource) for resource in resources])
     command = (
         "kubectl "
         f"--context {cluster_name} "
         f"--namespace {namespace} "
-        f"get {str(resource_type)} "
+        f"get {resources_str} "
         "--output=json "
         f"--selector app={app_name}"
     )
