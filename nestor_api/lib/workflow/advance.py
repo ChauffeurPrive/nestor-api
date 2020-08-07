@@ -1,19 +1,36 @@
 """Workflow library advance."""
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import nestor_api.lib.config as config
 import nestor_api.lib.git as git
+from nestor_api.lib.workflow.errors import (
+    AppListingError,
+    StepNotExistingInWorkflowError,
+    WorkflowError,
+)
+from nestor_api.lib.workflow.typings import AdvanceWorkflowAppReport, WorkflowAdvanceStatus
+from nestor_api.utils.error_handling import non_blocking_clean
 from nestor_api.utils.logger import Logger
-from nestor_api.lib.workflow.utils import non_blocking_clean
-from nestor_api.lib.workflow.errors import StepNotExistingInWorkflowError
 
 
-def advance_workflow(config_dir: str, project_config: Dict, current_step: str):
+def advance_workflow(
+    config_dir: str, project_config: Dict, current_step: str
+) -> Tuple[WorkflowAdvanceStatus, List[AdvanceWorkflowAppReport]]:
     """Advance the application workflow to the next step"""
-    progress_report = []
+    progress_report: List[AdvanceWorkflowAppReport] = []
     next_step = get_next_step(project_config, current_step)
+    if next_step is None:
+        raise WorkflowError("Workflow is already in final step.")
+    status = WorkflowAdvanceStatus.SUCCESS
 
-    for (app_name, app_config) in config.list_apps_config(config_dir).items():
+    # List applications
+    try:
+        apps = config.list_apps_config(config_dir)
+    except Exception as err:
+        Logger.error({"err": str(err)}, "An error happened while listing applications")
+        raise AppListingError(err)
+
+    for (app_name, app_config) in apps.items():
         should_app_progress = False
         tag = None
         app_dir = None
@@ -56,6 +73,7 @@ def advance_workflow(config_dir: str, project_config: Dict, current_step: str):
 
                 # TODO How to deal with those specific lines :
                 #  https://github.com/transcovo/nestor-api/blob/master/src/processes/web/api/workflow/index.js#L165
+        # pylint: disable=broad-except
         except Exception as err:
             Logger.error(
                 {
@@ -68,11 +86,12 @@ def advance_workflow(config_dir: str, project_config: Dict, current_step: str):
                 },
                 "Error while advancing the workflow",
             )
+            status = WorkflowAdvanceStatus.FAIL
 
         if app_dir is not None:
             non_blocking_clean(app_dir)
 
-    return progress_report
+    return status, progress_report
 
 
 def get_app_progress_report(app_dir: str, current_step: str, next_step: str) -> Tuple[bool, str]:

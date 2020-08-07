@@ -10,8 +10,6 @@ from nestor_api.adapters.git.abstract_git_provider import (
 )
 from nestor_api.config.git import GitConfiguration
 import nestor_api.lib.config as config
-from nestor_api.utils.logger import Logger
-from nestor_api.lib.workflow.utils import non_blocking_clean
 from nestor_api.lib.workflow.typings import (
     BranchReport,
     CreationStatus,
@@ -19,12 +17,8 @@ from nestor_api.lib.workflow.typings import (
     Report,
     WorkflowInitStatus,
 )
-
-
-class StepNotExistingInWorkflowError(Exception):
-    """The step does not exist in the workflow"""
-
-    pass
+from nestor_api.utils.error_handling import non_blocking_clean
+from nestor_api.utils.logger import Logger
 
 
 def init_workflow(

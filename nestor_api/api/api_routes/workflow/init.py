@@ -11,7 +11,7 @@ from nestor_api.utils.logger import Logger
 
 def init_workflow(organization, app):
     """Initialize the workflow of an application."""
-    Logger.debug(
+    Logger.info(
         {"app": app, "organization": organization},
         "[/api/workflow/init/:org/:app] Workflow initialization started",
     )

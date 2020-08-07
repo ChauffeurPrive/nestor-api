@@ -1,160 +1,162 @@
 from http import HTTPStatus
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from nestor_api.adapters.git.abstract_git_provider import AbstractGitProvider
+from nestor_api.api.api_routes.workflow.advance import _get_status_and_message
 from nestor_api.api.flask_app import create_app
-from nestor_api.lib.workflow import WorkflowInitStatus
+from nestor_api.lib.workflow import WorkflowAdvanceStatus
 
 
-@patch("nestor_api.api.api_routes.workflow.init.Logger", autospec=True)
-@patch("nestor_api.api.api_routes.workflow.init.io_lib", autospec=True)
+@patch("nestor_api.api.api_routes.workflow.advance.Logger", autospec=True)
 class TestWorkflow(TestCase):
     def setUp(self):
         app = create_app()
         app.config["TESTING"] = True
         self.app_client = app.test_client()
 
-    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.advance.non_blocking_clean", autospec=True)
+    @patch(
+        "nestor_api.api.api_routes.workflow.advance.workflow_lib.advance_workflow", autospec=True
+    )
+    @patch("nestor_api.api.api_routes.workflow.advance.config_lib", autospec=True)
     def test_advance_workflow(
-        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
+        self, config_mock, advance_workflow_mock, non_blocking_clean_mock, _logger_mock
     ):
         """Should properly return success response containing report."""
         # Mock
         config_mock.create_temporary_config_copy.return_value = "fake-path"
-        fake_config = {"git": {"provider": "some-provider"}}
+        fake_config = {"workflow": ["master", "staging", "production"]}
         config_mock.get_project_config.return_value = fake_config
-        get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        init_workflow_mock.return_value = (
-            WorkflowInitStatus.SUCCESS,
-            {"integration": {"created": (True, True), "protected": (True, True)}},
+        advance_workflow_mock.return_value = (
+            WorkflowAdvanceStatus.SUCCESS,
+            [
+                {
+                    "name": "app-1",
+                    "tag": "0.0.0-sha-cf021d1",
+                    "step": "staging",
+                    "processes": [],
+                    "cron_jobs": [],
+                }
+            ],
         )
 
         # Tests
-        response = self.app_client.post("/api/workflow/init/my-org/my-app")
+        response = self.app_client.post("/api/workflow/progress/master")
         data = response.get_json()
 
         # Assertions
+        config_mock.create_temporary_config_copy.assert_called_once()
+        config_mock.change_environment.assert_called_once_with("staging", "fake-path")
+        advance_workflow_mock.assert_called_once_with("fake-path", fake_config, "master")
+        non_blocking_clean_mock.assert_called_once_with(
+            "fake-path", message_prefix="[/api/workflow/progress/<current_step>]"
+        )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(
             data,
             {
-                "organization": "my-org",
-                "message": "Workflow initialization succeeded",
-                "app": "my-app",
-                "report": {"integration": {"created": [True, True], "protected": [True, True]}},
+                "current_step": "master",
+                "message": "Workflow advance succeeded",
+                "report": [
+                    {
+                        "name": "app-1",
+                        "tag": "0.0.0-sha-cf021d1",
+                        "step": "staging",
+                        "processes": [],
+                        "cron_jobs": [],
+                    }
+                ],
             },
         )
 
-        config_mock.get_project_config.assert_called_once_with("fake-path")
-        get_git_provider_mock.assert_called_with(fake_config)
-        io_mock.remove.assert_called_with("fake-path")
-
-    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
-    def test_init_workflow_failing(
-        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
+    @patch("nestor_api.api.api_routes.workflow.advance.non_blocking_clean", autospec=True)
+    @patch(
+        "nestor_api.api.api_routes.workflow.advance.workflow_lib.advance_workflow", autospec=True
+    )
+    @patch("nestor_api.api.api_routes.workflow.advance.config_lib", autospec=True)
+    def test_advance_workflow_with_status_failed(
+        self, config_mock, advance_workflow_mock, non_blocking_clean_mock, _logger_mock
     ):
-        """Should properly return fail response containing report."""
+        """Should properly return success response containing report."""
         # Mock
         config_mock.create_temporary_config_copy.return_value = "fake-path"
-        fake_config = {"git": {"provider": "some-provider"}}
+        fake_config = {"workflow": ["master", "staging", "production"]}
         config_mock.get_project_config.return_value = fake_config
-        get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        print(WorkflowInitStatus.FAIL)
-        init_workflow_mock.return_value = (WorkflowInitStatus.FAIL, {})
+        advance_workflow_mock.return_value = (
+            WorkflowAdvanceStatus.FAIL,
+            [
+                {
+                    "name": "app-1",
+                    "tag": "0.0.0-sha-cf021d1",
+                    "step": "staging",
+                    "processes": [],
+                    "cron_jobs": [],
+                }
+            ],
+        )
 
         # Tests
-        response = self.app_client.post("/api/workflow/init/my-org/my-app")
+        response = self.app_client.post("/api/workflow/progress/master")
+        data = response.get_json()
+
+        # Assertions
+        config_mock.create_temporary_config_copy.assert_called_once()
+        config_mock.change_environment.assert_called_once_with("staging", "fake-path")
+        advance_workflow_mock.assert_called_once_with("fake-path", fake_config, "master")
+        non_blocking_clean_mock.assert_called_once_with(
+            "fake-path", message_prefix="[/api/workflow/progress/<current_step>]"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.assertEqual(
+            data,
+            {
+                "current_step": "master",
+                "message": "Workflow advance failed",
+                "report": [
+                    {
+                        "name": "app-1",
+                        "tag": "0.0.0-sha-cf021d1",
+                        "step": "staging",
+                        "processes": [],
+                        "cron_jobs": [],
+                    }
+                ],
+            },
+        )
+
+    @patch("nestor_api.api.api_routes.workflow.advance.config_lib", autospec=True)
+    def test_advance_workflow_failing(self, config_mock, _logger_mock):
+        """Should properly return success response containing report."""
+        # Mock
+        config_mock.create_temporary_config_copy.side_effect = Exception("fake-error")
+
+        # Tests
+        response = self.app_client.post("/api/workflow/progress/master")
         data = response.get_json()
 
         # Assertions
         self.assertEqual(response.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
         self.assertEqual(
             data,
-            {
-                "organization": "my-org",
-                "message": "Workflow initialization failed",
-                "app": "my-app",
-                "report": {},
-            },
+            {"current_step": "master", "message": "Workflow advance failed", "err": "fake-error"},
         )
 
-        config_mock.get_project_config.assert_called_once_with("fake-path")
-        get_git_provider_mock.assert_called_with(fake_config)
-        io_mock.remove.assert_called_with("fake-path")
-
-    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
-    def test_init_workflow_return_unexpected_status(
-        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
-    ):
-        """Should properly return fail response containing error."""
-        # Mock
-        config_mock.create_temporary_config_copy.return_value = "fake-path"
-        fake_config = {"git": {"provider": "some-provider"}}
-        config_mock.get_project_config.return_value = fake_config
-        get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        init_workflow_mock.return_value = ("unexpected-status", {})
+    def test_get_status_and_message_for_success(self, _logger_mock):
+        """Should properly return status and message."""
 
         # Tests
-        response = self.app_client.post("/api/workflow/init/my-org/my-app")
-        data = response.get_json()
+        status, message = _get_status_and_message(WorkflowAdvanceStatus.SUCCESS)
 
         # Assertions
-        self.assertEqual(response.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        self.assertEqual(
-            data,
-            {
-                "app": "my-app",
-                "err": "Unexpected status: 'unexpected-status'",
-                "message": "Workflow initialization failed",
-                "organization": "my-org",
-            },
-        )
+        self.assertEqual(status, HTTPStatus.OK)
+        self.assertEqual(message, "Workflow advance succeeded")
 
-        config_mock.get_project_config.assert_called_once_with("fake-path")
-        get_git_provider_mock.assert_called_with(fake_config)
-        io_mock.remove.assert_not_called()
-
-    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
-    def test_init_workflow_with_fail_during_cleaning(
-        self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
-    ):
-        """Should not prevent the server to respond properly."""
-        # Mock
-        config_mock.create_temporary_config_copy.return_value = "fake-path"
-        fake_config = {"git": {"provider": "some-provider"}}
-        config_mock.get_project_config.return_value = fake_config
-        get_git_provider_mock.return_value = MagicMock(spec=AbstractGitProvider)
-        init_workflow_mock.return_value = (
-            WorkflowInitStatus.SUCCESS,
-            {"integration": {"created": (True, True), "protected": (True, True)}},
-        )
-        io_mock.remove.side_effect = Exception("Some error during cleaning")
+    def test_get_status_and_message_for_fail(self, _logger_mock):
+        """Should properly return status and message."""
 
         # Tests
-        response = self.app_client.post("/api/workflow/init/my-org/my-app")
-        data = response.get_json()
+        status, message = _get_status_and_message(WorkflowAdvanceStatus.FAIL)
 
         # Assertions
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(
-            data,
-            {
-                "organization": "my-org",
-                "message": "Workflow initialization succeeded",
-                "app": "my-app",
-                "report": {"integration": {"created": [True, True], "protected": [True, True]}},
-            },
-        )
-
-        config_mock.get_project_config.assert_called_once_with("fake-path")
-        get_git_provider_mock.assert_called_with(fake_config)
-        io_mock.remove.assert_called_with("fake-path")
+        self.assertEqual(status, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.assertEqual(message, "Workflow advance failed")

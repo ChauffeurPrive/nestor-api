@@ -1,8 +1,13 @@
 from unittest import TestCase
 from unittest.mock import call, patch
 
-from nestor_api.lib.workflow.errors import StepNotExistingInWorkflowError
 from nestor_api.lib.workflow.advance import advance_workflow, get_app_progress_report, get_next_step
+from nestor_api.lib.workflow.errors import (
+    AppListingError,
+    StepNotExistingInWorkflowError,
+    WorkflowError,
+)
+from nestor_api.lib.workflow.typings import WorkflowAdvanceStatus
 
 
 class TestWorkflow(TestCase):
@@ -19,8 +24,9 @@ class TestWorkflow(TestCase):
         non_blocking_clean_mock,
         config_mock,
         git_mock,
-        logger_mock,
+        _logger_mock,
     ):
+        """Should properly advance workflow for all apps."""
         # Mocks
         get_next_step_mock.return_value = "step-2"
         fake_config_app_1 = {"git": {"origin": "fake-git-origin-for-app-1"}}
@@ -59,15 +65,18 @@ class TestWorkflow(TestCase):
         non_blocking_clean_mock.assert_has_calls([call("app-1-dir"), call("app-2-dir")])
         self.assertEqual(
             result,
-            [
-                {
-                    "name": "app-1",
-                    "tag": "0.0.0-sha-cf021d1",
-                    "step": "step-2",
-                    "processes": [],
-                    "cron_jobs": [],
-                }
-            ],
+            (
+                WorkflowAdvanceStatus.SUCCESS,
+                [
+                    {
+                        "name": "app-1",
+                        "tag": "0.0.0-sha-cf021d1",
+                        "step": "step-2",
+                        "processes": [],
+                        "cron_jobs": [],
+                    }
+                ],
+            ),
         )
 
     @patch("nestor_api.lib.workflow.advance.Logger", autospec=True)
@@ -83,8 +92,9 @@ class TestWorkflow(TestCase):
         non_blocking_clean_mock,
         config_mock,
         git_mock,
-        logger_mock,
+        _logger_mock,
     ):
+        """Should return fail status if one of the app failed to advance workflow."""
         # Mocks
         get_next_step_mock.return_value = "step-2"
         config_mock.list_apps_config.return_value.items.return_value = [
@@ -96,9 +106,6 @@ class TestWorkflow(TestCase):
         config_mock.get_processes.return_value = []
         config_mock.get_cronjobs.return_value = []
 
-        # Assertions
-        non_blocking_clean_mock.assert_not_called()
-
         # Test
         result = advance_workflow("path/to/config", {}, "step-1")
 
@@ -109,16 +116,46 @@ class TestWorkflow(TestCase):
         non_blocking_clean_mock.assert_called_once_with("app-2-dir")
         self.assertEqual(
             result,
-            [
-                {
-                    "name": "app-2",
-                    "tag": "0.0.0-sha-cf021d1",
-                    "step": "step-2",
-                    "processes": [],
-                    "cron_jobs": [],
-                }
-            ],
+            (
+                WorkflowAdvanceStatus.FAIL,
+                [
+                    {
+                        "name": "app-2",
+                        "tag": "0.0.0-sha-cf021d1",
+                        "step": "step-2",
+                        "processes": [],
+                        "cron_jobs": [],
+                    }
+                ],
+            ),
         )
+
+    @patch("nestor_api.lib.workflow.advance.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.advance.get_next_step", autospec=True)
+    @patch("nestor_api.lib.workflow.advance.config", autospec=True)
+    def test_advance_workflow_with_application_listing_failing(
+        self, config_mock, _get_next_step_mock, _logger_mock,
+    ):
+        """Should raise an AppListingError if something fails when listing apps."""
+        # Mocks
+        config_mock.list_apps_config.side_effect = Exception("fake error")
+
+        # Test
+        with self.assertRaises(AppListingError):
+            advance_workflow("path/to/config", {}, "step-1")
+
+    @patch("nestor_api.lib.workflow.advance.Logger", autospec=True)
+    @patch("nestor_api.lib.workflow.advance.get_next_step", autospec=True)
+    def test_advance_workflow_with_next_step_not_found(
+        self, get_next_step_mock, _logger_mock,
+    ):
+        """Should raise an AppListingError if something fails when listing apps."""
+        # Mocks
+        get_next_step_mock.return_value = None
+
+        # Test
+        with self.assertRaisesRegex(WorkflowError, "Workflow is already in final step."):
+            advance_workflow("path/to/config", {}, "step-1")
 
     @patch("nestor_api.lib.workflow.advance.git")
     def test_get_app_progress_report_with_app_ready_to_progress(self, git_mock):
