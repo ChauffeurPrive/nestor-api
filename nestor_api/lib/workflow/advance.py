@@ -59,8 +59,6 @@ def advance_workflow(
                 processes = config.get_processes(app_config)
                 cron_jobs = config.get_cronjobs(app_config)
 
-                # TODO Unused but should be inserted in MongoDB.
-                #  We should find a solution to retrieve it on the "other side"
                 progress_report.append(
                     {
                         "name": app_name,
@@ -71,8 +69,6 @@ def advance_workflow(
                     }
                 )
 
-                # TODO How to deal with those specific lines :
-                #  https://github.com/transcovo/nestor-api/blob/master/src/processes/web/api/workflow/index.js#L165
         # pylint: disable=broad-except
         except Exception as err:
             Logger.error(
