@@ -7,17 +7,17 @@ from nestor_api.api.flask_app import create_app
 from nestor_api.lib.workflow import WorkflowInitStatus
 
 
-@patch("nestor_api.api.api_routes.workflow.workflow.Logger", autospec=True)
-@patch("nestor_api.api.api_routes.workflow.workflow.io_lib", autospec=True)
+@patch("nestor_api.api.api_routes.workflow.init.Logger", autospec=True)
+@patch("nestor_api.api.api_routes.workflow.init.io_lib", autospec=True)
 class TestWorkflow(TestCase):
     def setUp(self):
         app = create_app()
         app.config["TESTING"] = True
         self.app_client = app.test_client()
 
-    @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
     def test_init_workflow(
         self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):
@@ -52,9 +52,9 @@ class TestWorkflow(TestCase):
         get_git_provider_mock.assert_called_with(fake_config)
         io_mock.remove.assert_called_with("fake-path")
 
-    @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
     def test_init_workflow_failing(
         self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):
@@ -87,9 +87,9 @@ class TestWorkflow(TestCase):
         get_git_provider_mock.assert_called_with(fake_config)
         io_mock.remove.assert_called_with("fake-path")
 
-    @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
     def test_init_workflow_return_unexpected_status(
         self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):
@@ -121,9 +121,9 @@ class TestWorkflow(TestCase):
         get_git_provider_mock.assert_called_with(fake_config)
         io_mock.remove.assert_not_called()
 
-    @patch("nestor_api.api.api_routes.workflow.workflow.get_git_provider", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.workflow_lib.init_workflow", autospec=True)
-    @patch("nestor_api.api.api_routes.workflow.workflow.config_lib", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.get_git_provider", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.workflow_lib.init_workflow", autospec=True)
+    @patch("nestor_api.api.api_routes.workflow.init.config_lib", autospec=True)
     def test_init_workflow_with_fail_during_cleaning(
         self, config_mock, init_workflow_mock, get_git_provider_mock, io_mock, _logger_mock
     ):

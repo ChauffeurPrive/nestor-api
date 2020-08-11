@@ -7,29 +7,47 @@ import nestor_api.lib.git as git
 
 @patch("nestor_api.lib.git.io", autospec=True)
 class TestGitLibrary(TestCase):
-    def test_branch_existing(self, io_mock):
+    @patch("nestor_api.lib.git.is_branch_existing", autospec=True)
+    def test_branch_existing(self, is_branch_existing_mock, io_mock):
         io_mock.execute.side_effect = ["* feature/branch remotes/origin/feature/branch", ""]
+        is_branch_existing_mock.return_value = True
 
         git.branch("/path_to/a_git_repository", "feature/branch")
 
-        io_mock.execute.assert_has_calls(
-            [
-                call("git branch --list feature/branch", "/path_to/a_git_repository"),
-                call("git checkout feature/branch", "/path_to/a_git_repository"),
-            ]
+        io_mock.execute.assert_called_with(
+            "git checkout feature/branch", "/path_to/a_git_repository"
         )
 
-    def test_branch_not_existing(self, io_mock):
+    @patch("nestor_api.lib.git.is_branch_existing", autospec=True)
+    def test_branch_not_existing(self, is_branch_existing_mock, io_mock):
         io_mock.execute.side_effect = ["", ""]
+        is_branch_existing_mock.return_value = False
 
         git.branch("/path_to/a_git_repository", "feature/branch")
 
-        io_mock.execute.assert_has_calls(
-            [
-                call("git branch --list feature/branch", "/path_to/a_git_repository"),
-                call("git checkout -b feature/branch", "/path_to/a_git_repository"),
-            ]
+        io_mock.execute.assert_called_with(
+            "git checkout -b feature/branch", "/path_to/a_git_repository"
         )
+
+    def test_is_branch_existing_with_existing_branch(self, io_mock):
+        io_mock.execute.return_value = "* feature/branch remotes/origin/feature/branch"
+
+        result = git.is_branch_existing("/path_to/a_git_repository", "feature/branch")
+
+        io_mock.execute.assert_has_calls(
+            [call("git branch --list feature/branch", "/path_to/a_git_repository"),]
+        )
+        self.assertEqual(result, True)
+
+    def test_is_branch_existing_with_non_existing_branch(self, io_mock):
+        io_mock.execute.return_value = ""
+
+        result = git.is_branch_existing("/path_to/a_git_repository", "feature/branch")
+
+        io_mock.execute.assert_has_calls(
+            [call("git branch --list feature/branch", "/path_to/a_git_repository"),]
+        )
+        self.assertEqual(result, False)
 
     @patch("nestor_api.lib.git.update_pristine_repository", autospec=True)
     def test_create_working_repository(self, update_pristine_repository_mock, io_mock):
