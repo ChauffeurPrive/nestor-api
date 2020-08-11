@@ -14,17 +14,24 @@ class TestWorkflow(TestCase):
         app.config["TESTING"] = True
         self.app_client = app.test_client()
 
+    @patch("nestor_api.api.api_routes.workflow.advance.Configuration", autospec=True)
     @patch("nestor_api.api.api_routes.workflow.advance.non_blocking_clean", autospec=True)
     @patch(
         "nestor_api.api.api_routes.workflow.advance.workflow_lib.advance_workflow", autospec=True
     )
     @patch("nestor_api.api.api_routes.workflow.advance.config_lib", autospec=True)
     def test_advance_workflow(
-        self, config_mock, advance_workflow_mock, non_blocking_clean_mock, _logger_mock
+        self,
+        config_mock,
+        advance_workflow_mock,
+        non_blocking_clean_mock,
+        _configuration_mock,
+        _logger_mock,
     ):
         """Should properly return success response containing report."""
         # Mock
         config_mock.create_temporary_config_copy.return_value = "fake-path"
+        _configuration_mock.get_config_default_branch.return_value = "staging"
         fake_config = {"workflow": ["master", "staging", "production"]}
         config_mock.get_project_config.return_value = fake_config
         advance_workflow_mock.return_value = (
@@ -69,17 +76,24 @@ class TestWorkflow(TestCase):
             },
         )
 
+    @patch("nestor_api.api.api_routes.workflow.advance.Configuration", autospec=True)
     @patch("nestor_api.api.api_routes.workflow.advance.non_blocking_clean", autospec=True)
     @patch(
         "nestor_api.api.api_routes.workflow.advance.workflow_lib.advance_workflow", autospec=True
     )
     @patch("nestor_api.api.api_routes.workflow.advance.config_lib", autospec=True)
     def test_advance_workflow_with_status_failed(
-        self, config_mock, advance_workflow_mock, non_blocking_clean_mock, _logger_mock
+        self,
+        config_mock,
+        advance_workflow_mock,
+        non_blocking_clean_mock,
+        _configuration_mock,
+        _logger_mock,
     ):
-        """Should properly return success response containing report."""
+        """Should properly return failure response containing report."""
         # Mock
         config_mock.create_temporary_config_copy.return_value = "fake-path"
+        _configuration_mock.get_config_default_branch.return_value = "staging"
         fake_config = {"workflow": ["master", "staging", "production"]}
         config_mock.get_project_config.return_value = fake_config
         advance_workflow_mock.return_value = (
@@ -126,7 +140,7 @@ class TestWorkflow(TestCase):
 
     @patch("nestor_api.api.api_routes.workflow.advance.config_lib", autospec=True)
     def test_advance_workflow_failing(self, config_mock, _logger_mock):
-        """Should properly return success response containing report."""
+        """Should return error response."""
         # Mock
         config_mock.create_temporary_config_copy.side_effect = Exception("fake-error")
 

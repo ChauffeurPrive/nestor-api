@@ -27,7 +27,6 @@ def advance_workflow(
     try:
         apps = config.list_apps_config(config_dir)
     except Exception as err:
-        Logger.error({"err": str(err)}, "An error happened while listing applications")
         raise AppListingError(err)
 
     for (app_name, app_config) in apps.items():

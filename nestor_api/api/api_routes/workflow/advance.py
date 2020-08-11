@@ -2,6 +2,7 @@
 
 from http import HTTPStatus
 
+from nestor_api.config.config import Configuration
 import nestor_api.lib.config as config_lib
 import nestor_api.lib.workflow as workflow_lib
 from nestor_api.utils.error_handling import non_blocking_clean
@@ -9,7 +10,7 @@ from nestor_api.utils.logger import Logger
 
 
 def advance_workflow(current_step):
-    """Advance the workflow for all requested applications."""
+    """Advance the workflow for all applications able to be advanced."""
     Logger.info(
         {"current_step": current_step},
         "[/api/workflow/progress/<current_step>] Workflow advance started",
@@ -18,7 +19,7 @@ def advance_workflow(current_step):
     try:
         # Creating a copy of the working configuration directory
         config_dir = config_lib.create_temporary_config_copy()
-        config_lib.change_environment("staging", config_dir)
+        config_lib.change_environment(Configuration.get_config_default_branch(), config_dir)
         project_config = config_lib.get_project_config(config_dir)
 
         report_status, report = workflow_lib.advance_workflow(

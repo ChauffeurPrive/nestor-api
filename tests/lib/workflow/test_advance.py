@@ -149,7 +149,7 @@ class TestWorkflow(TestCase):
     def test_advance_workflow_with_next_step_not_found(
         self, get_next_step_mock, _logger_mock,
     ):
-        """Should raise an AppListingError if something fails when listing apps."""
+        """Should raise a WorkflowError if there is no next step."""
         # Mocks
         get_next_step_mock.return_value = None
 

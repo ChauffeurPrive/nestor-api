@@ -10,9 +10,7 @@ def branch(repository_dir: str, branch_name: str) -> None:
     """Checkout a branch of a repository"""
     Logger.debug({"path": repository_dir}, "[git#branch] Repository path")
 
-    stdout = io.execute(f"git branch --list {branch_name}", repository_dir)
-
-    exists = len(stdout) > 0
+    exists = is_branch_existing(repository_dir, branch_name)
 
     io.execute(f'git checkout{"" if exists else " -b"} {branch_name}', repository_dir)
 
